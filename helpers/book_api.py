@@ -11,7 +11,7 @@ load_dotenv()
 GOOGLE_BOOKS_API_URL = "https://www.googleapis.com/books/v1/volumes"
 
 # Google Books API key
-GOOGLE_BOOKS_API_KEY = "your_api_key_here"
+GOOGLE_BOOKS_API_KEY = "AIzaSyBmi5kJxULV8VJqdYNqvf6ZcDptVQ_82VY"
 
 def search_google_books(query, max_results=10):
     """
