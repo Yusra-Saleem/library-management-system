@@ -1,6 +1,5 @@
 import os
 import requests
-import json
 import streamlit as st
 from dotenv import load_dotenv
 
@@ -9,9 +8,6 @@ load_dotenv()
 
 # Google Books API endpoint
 GOOGLE_BOOKS_API_URL = "https://www.googleapis.com/books/v1/volumes"
-
-# Google Books API key
-GOOGLE_BOOKS_API_KEY = "AIzaSyBmi5kJxULV8VJqdYNqvf6ZcDptVQ_82VY"
 
 def search_google_books(query, max_results=10):
     """
@@ -24,23 +20,25 @@ def search_google_books(query, max_results=10):
         # Try getting from Streamlit secrets first
         try:
             api_key = st.secrets["GOOGLE_BOOKS_API_KEY"]
+            st.write("API key retrieved from Streamlit secrets.")  # Debug
         except:
             # Try .env file if not in secrets
             load_dotenv()
             api_key = os.getenv('GOOGLE_BOOKS_API_KEY')
+            st.write("API key retrieved from .env file.")  # Debug
         
         # Check if we have an API key from either source
         if not api_key:
             st.error("API key not configured. Please check the configuration.")
             return []
-            
-        base_url = "https://www.googleapis.com/books/v1/volumes"
+        
+        st.write(f"Using API Key: {api_key}")  # Debug
         
         # Clean and validate the query
         if not query or len(query.strip()) == 0:
             st.warning("Please enter a search term")
             return []
-            
+        
         # Add API key to parameters
         params = {
             'q': query,
@@ -49,16 +47,18 @@ def search_google_books(query, max_results=10):
         }
         
         # Make the request
-        response = requests.get(base_url, params=params)
+        response = requests.get(GOOGLE_BOOKS_API_URL, params=params)
         
         # Check response status
         if response.status_code == 403:
             st.error("API access denied. Please check API key configuration.")
+            st.error(f"Response: {response.text}")  # Debug
             return []
         elif response.status_code != 200:
             st.error(f"Server returned status code: {response.status_code}")
+            st.error(f"Response: {response.text}")  # Debug
             return []
-            
+        
         data = response.json()
         
         # Check if we got any results
@@ -66,11 +66,11 @@ def search_google_books(query, max_results=10):
         if total_items == 0:
             st.info(f"No books found for '{query}'")
             return []
-            
+        
         if 'items' not in data:
             st.warning("Search returned no results")
             return []
-            
+        
         books = []
         for item in data['items']:
             volume_info = item.get('volumeInfo', {})
@@ -93,7 +93,7 @@ def search_google_books(query, max_results=10):
         st.error("Connection error. Please check your internet connection.")
         return []
     except Exception as e:
-        st.error("An unexpected error occurred while searching for books.")
+        st.error(f"An unexpected error occurred while searching for books: {str(e)}")
         return []
 
 def get_book_details(google_id):
