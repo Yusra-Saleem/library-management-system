@@ -1,12 +1,16 @@
+import streamlit as st
+import pandas as pd
+
+# Defensive imports for plotly
 try:
-    import plotly.express as px
-    import plotly.graph_objects as go
-except ImportError:
     import plotly
     import plotly.express as px
     import plotly.graph_objects as go
-import pandas as pd
-import streamlit as st
+except ImportError as e:
+    st.error(f"Failed to import plotly: {str(e)}")
+    st.error("Please make sure plotly is installed correctly")
+    raise
+
 from helpers.book_data import get_book_status_counts, get_genre_counts, get_year_counts
 
 def create_reading_status_chart(books):
