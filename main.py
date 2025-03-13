@@ -145,7 +145,8 @@ if st.session_state.current_page == 'home':
     
     with col1:
         if len(st.session_state.books) > 0:
-            create_reading_status_chart(st.session_state.books)
+            reading_status_fig = create_reading_status_chart(st.session_state.books)
+            st.plotly_chart(reading_status_fig, use_container_width=True)
         else:
             st.info("Add books to see reading status statistics.")
     
