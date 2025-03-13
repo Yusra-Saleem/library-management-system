@@ -10,16 +10,30 @@ load_dotenv()
 # Google Books API endpoint
 GOOGLE_BOOKS_API_URL = "https://www.googleapis.com/books/v1/volumes"
 
+# Google Books API key
+GOOGLE_BOOKS_API_KEY = "your_api_key_here"
+
 def search_google_books(query, max_results=10):
     """
     Search for books using the Google Books API
-    
-    Args:
-        query (str): Search query string
-        max_results (int): Maximum number of results to return (default: 10)
     """
     try:
-        api_key = os.getenv('GOOGLE_BOOKS_API_KEY')
+        # Try to get API key from multiple sources
+        api_key = None
+        
+        # Try getting from Streamlit secrets first
+        try:
+            api_key = st.secrets["GOOGLE_BOOKS_API_KEY"]
+        except:
+            # Try .env file if not in secrets
+            load_dotenv()
+            api_key = os.getenv('GOOGLE_BOOKS_API_KEY')
+        
+        # Check if we have an API key from either source
+        if not api_key:
+            st.error("API key not configured. Please check the configuration.")
+            return []
+            
         base_url = "https://www.googleapis.com/books/v1/volumes"
         
         # Add API key to parameters
@@ -29,9 +43,13 @@ def search_google_books(query, max_results=10):
             'maxResults': max_results
         }
         
+        # Make the request
         response = requests.get(base_url, params=params)
-        response.raise_for_status()  # Raise an exception for bad status codes
         
+        if response.status_code != 200:
+            st.error("Unable to fetch books at this time. Please try again later.")
+            return []
+            
         data = response.json()
         
         if 'items' not in data:
@@ -43,17 +61,17 @@ def search_google_books(query, max_results=10):
             book = {
                 'title': volume_info.get('title', 'Unknown Title'),
                 'author': ', '.join(volume_info.get('authors', ['Unknown Author'])),
-                'year': volume_info.get('publishedDate', 'Unknown')[:4],
+                'year': volume_info.get('publishedDate', 'Unknown')[:4] if volume_info.get('publishedDate') else 'Unknown',
                 'genre': ', '.join(volume_info.get('categories', ['Unknown'])),
                 'description': volume_info.get('description', 'No description available'),
                 'cover_image': volume_info.get('imageLinks', {}).get('thumbnail', None)
             }
             books.append(book)
-            
+        
         return books
         
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching book data: {e}")
+    except Exception as e:
+        st.error("An error occurred while searching for books.")
         return []
 
 def get_book_details(google_id):
