@@ -20,19 +20,15 @@ def search_google_books(query, max_results=10):
         # Try getting from Streamlit secrets first
         try:
             api_key = st.secrets["GOOGLE_BOOKS_API_KEY"]
-            st.write("API key retrieved from Streamlit secrets.")  # Debug
         except:
             # Try .env file if not in secrets
             load_dotenv()
             api_key = os.getenv('GOOGLE_BOOKS_API_KEY')
-            st.write("API key retrieved from .env file.")  # Debug
         
         # Check if we have an API key from either source
         if not api_key:
             st.error("API key not configured. Please check the configuration.")
             return []
-        
-        st.write(f"Using API Key: {api_key}")  # Debug
         
         # Clean and validate the query
         if not query or len(query.strip()) == 0:
@@ -52,11 +48,9 @@ def search_google_books(query, max_results=10):
         # Check response status
         if response.status_code == 403:
             st.error("API access denied. Please check API key configuration.")
-            st.error(f"Response: {response.text}")  # Debug
             return []
         elif response.status_code != 200:
             st.error(f"Server returned status code: {response.status_code}")
-            st.error(f"Response: {response.text}")  # Debug
             return []
         
         data = response.json()
@@ -93,7 +87,7 @@ def search_google_books(query, max_results=10):
         st.error("Connection error. Please check your internet connection.")
         return []
     except Exception as e:
-        st.error(f"An unexpected error occurred while searching for books: {str(e)}")
+        st.error("An unexpected error occurred while searching for books.")
         return []
 
 def get_book_details(google_id):
