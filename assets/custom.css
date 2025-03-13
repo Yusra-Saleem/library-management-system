@@ -1,0 +1,390 @@
+/* Global Styles */
+:root {
+    --primary-color: #1E88E5;
+    --secondary-color: #43A047;
+    --accent-color: #FFC107;
+    --text-color: #333333;
+    --light-bg: #FFFFFF;
+    --dark-bg: #121212;
+    --dark-text: #E0E0E0;
+    --border-radius: 10px;
+    --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    transition: background-color 0.3s ease;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Light Mode */
+.light-mode {
+    background-color: var(--light-bg);
+    color: var(--text-color);
+}
+
+/* Dark Mode */
+.dark-mode {
+    background-color: var(--dark-bg);
+    color: var(--dark-text);
+}
+
+/* Custom input styling removed to use Streamlit defaults */
+
+/* Card Styling */
+.book-card {
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    padding: 20px;
+    margin: 10px 0;
+    transition: transform 0.2s;
+}
+
+.book-card:hover {
+    transform: translateY(-5px);
+}
+
+/* Button Styling */
+.primary-button button {
+    background-color: var(--primary-color) !important;
+    color: white !important;
+}
+
+.secondary-button button {
+    background-color: var(--secondary-color) !important;
+    color: white !important;
+}
+
+.accent-button button {
+    background-color: var(--accent-color) !important;
+    color: var(--text-color) !important;
+}
+
+/* Status Colors */
+.status-read {
+    color: var(--secondary-color);
+}
+
+.status-reading {
+    color: var(--primary-color);
+}
+
+.status-to-read {
+    color: var(--accent-color);
+}
+/* Sidebar button styles */
+[data-testid="stSidebar"] .stButton > button {
+    background-color: #4361EE !important;
+    color: white !important;
+    width: 100%;
+    margin: 4px 0;
+}
+/* Button styles */
+.stButton > button {
+    background: #3949AB !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 6px !important;
+    padding: 0.6rem 1.2rem !important;
+    font-weight: 500 !important;
+    font-family: 'Inter', sans-serif !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 2px 5px rgba(57, 73, 171, 0.2) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+/* Metric styles */
+[data-testid="stMetricValue"] {
+    color: #4361EE !important;
+}
+
+/* Main heading style with animated icon */
+h1:first-of-type {
+    position: relative !important;
+    color: #2C3E50 !important;
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 2.8rem !important;
+    font-weight: 700 !important;
+    text-align: center !important;
+    margin-top: 3rem !important;
+    margin-bottom: 2rem !important;
+    padding: 1rem 0 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 2px !important;
+    background: linear-gradient(120deg, #6A11CB, #2575FC) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    border-bottom: 3px solid #2575FC !important;
+    text-shadow: 0 2px 4px rgba(106, 17, 203, 0.1) !important;
+}
+
+/* Add floating book icon before heading */
+h1:first-of-type::before {
+    content: "\1F4DA" !important;
+    position: absolute !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    top: -3rem !important;
+    font-size: 3.5rem !important;
+    background: none !important;
+    -webkit-background-clip: initial !important;
+    -webkit-text-fill-color: initial !important;
+    animation: float 3s ease-in-out infinite !important;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1)) !important;
+}
+
+/* Add shine effect after heading */
+h1:first-of-type::after {
+    content: "" !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: -100% !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+    ) !important;
+    animation: shine 3s infinite !important;
+}
+
+/* Float animation for icon */
+@keyframes float {
+    0% {
+        transform: translateX(-50%) translateY(0px);
+    }
+    50% {
+        transform: translateX(-50%) translateY(-10px);
+    }
+    100% {
+        transform: translateX(-50%) translateY(0px);
+    }
+}
+
+/* Shine animation */
+@keyframes shine {
+    0% {
+        left: -100%;
+    }
+    50% {
+        left: 100%;
+    }
+    100% {
+        left: 100%;
+    }
+}
+
+/* Other headings remain unchanged */
+h1:not(:first-of-type), h2, h3 {
+    color: #1E1E1E !important;
+    font-family: 'Inter', sans-serif !important;
+}
+/* Container styles */
+[data-testid="stContainer"] {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 0.5rem 0;
+}
+
+/* Header styles */
+.stButton > button:hover {
+    background: #283593 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 10px rgba(57, 73, 171, 0.3) !important;
+}
+
+/* Hide default Streamlit navigation */
+[data-testid="stSidebarNav"],
+.stSidebarNav {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+
+/* Form Styling */
+.stTextInput > div > div > input {
+    border-radius: var(--border-radius);
+}
+
+.stSelectbox > div > div > div {
+    border-radius: var(--border-radius);
+}
+
+/* Sidebar Styling */
+section[data-testid="stSidebar"] {
+    background-color: #f5f5f5;
+    border-right: 1px solid #e0e0e0;
+}
+
+.dark-mode section[data-testid="stSidebar"] {
+    background-color: #1e1e1e;
+    border-right: 1px solid #333;
+}
+
+/* Login/Register Form Styling */
+.auth-form {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 20px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .book-card {
+        padding: 15px;
+    }
+}
+
+/* Sidebar button styles */
+[data-testid="stSidebar"] .stButton > button {
+    background: #303F9F !important;
+    width: 100% !important;
+    margin: 4px 0 !important;
+    padding: 0.8rem !important;
+    border-radius: 6px !important;
+    font-size: 0.9rem !important;
+    font-weight: 500 !important;
+}
+
+/* Sidebar button hover */
+[data-testid="stSidebar"] .stButton > button:hover {
+    background: #283593 !important;
+    transform: translateY(-2px) !important;
+}
+
+/* Edit button style */
+button:has(span:contains("Edit")) {
+    background: #1976D2 !important;
+}
+
+/* Edit button hover */
+button:has(span:contains("Edit")):hover {
+    background: #1565C0 !important;
+}
+
+/* Delete button style */
+.stButton > button[kind="secondary"] {
+    background: #E53935 !important;
+}
+
+/* Delete button hover */
+.stButton > button[kind="secondary"]:hover {
+    background: #D32F2F !important;
+}
+
+/* Active/Click state for all buttons */
+.stButton > button:active {
+    transform: translateY(1px) !important;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1) !important;
+}
+
+/* Metric styles */
+[data-testid="stMetricValue"] {
+    color: #2980B9 !important;
+    font-weight: 600 !important;
+}
+
+/* Container styles with subtle gradient border */
+[data-testid="stContainer"] {
+    border: 2px solid #ECF0F1 !important;
+    border-radius: 12px !important;
+    padding: 1.2rem !important;
+    margin: 0.7rem 0 !important;
+    background: white !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05) !important;
+    transition: all 0.3s ease !important;
+}
+
+[data-testid="stContainer"]:hover {
+    border-color: #BDC3C7 !important;
+    box-shadow: 0 6px 20px rgba(41,128,185,0.1) !important;
+}
+
+/* Other headings */
+h1:not(:first-of-type), h2, h3 {
+    color: #1E1E1E !important;
+    font-family: 'Inter', sans-serif !important;
+}
+
+/* Add smooth scrolling to whole page */
+* {
+    scroll-behavior: smooth !important;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px !important;
+}
+
+::-webkit-scrollbar-track {
+    background: #ECF0F1 !important;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #2980B9 !important;
+    border-radius: 4px !important;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #2C3E50 !important;
+}
+
+/* Regular Button Styles */
+.stButton > button {
+    background: linear-gradient(120deg, #6A11CB, #2575FC) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 0.7rem 1.5rem !important;
+    font-weight: 600 !important;
+    font-family: 'Inter', sans-serif !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+    font-size: 0.9rem !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 4px 15px rgba(106, 17, 203, 0.2) !important;
+}
+
+/* Button hover effect */
+.stButton > button:hover {
+    background: linear-gradient(120deg, #2575FC, #6A11CB) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 25px rgba(106, 17, 203, 0.3) !important;
+}
+
+/* Sidebar button styles */
+[data-testid="stSidebar"] .stButton > button {
+    background: linear-gradient(120deg, #6A11CB, #2575FC) !important;
+    width: 100% !important;
+    margin: 4px 0 !important;
+    padding: 0.8rem !important;
+}
+
+/* Edit button style */
+button:has(span:contains("Edit")) {
+    background: linear-gradient(120deg, #6A11CB, #2575FC) !important;
+}
+
+/* Delete button style */
+.stButton > button[kind="secondary"] {
+    background: linear-gradient(120deg, #6A11CB, #2575FC) !important;
+}
+
+/* Button click effect */
+.stButton > button:active {
+    transform: translateY(1px) !important;
+    box-shadow: 0 2px 10px rgba(106, 17, 203, 0.2) !important;
+}
