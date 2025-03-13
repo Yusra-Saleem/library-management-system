@@ -36,6 +36,11 @@ def search_google_books(query, max_results=10):
             
         base_url = "https://www.googleapis.com/books/v1/volumes"
         
+        # Clean and validate the query
+        if not query or len(query.strip()) == 0:
+            st.warning("Please enter a search term")
+            return []
+            
         # Add API key to parameters
         params = {
             'q': query,
@@ -46,13 +51,24 @@ def search_google_books(query, max_results=10):
         # Make the request
         response = requests.get(base_url, params=params)
         
-        if response.status_code != 200:
-            st.error("Unable to fetch books at this time. Please try again later.")
+        # Check response status
+        if response.status_code == 403:
+            st.error("API access denied. Please check API key configuration.")
+            return []
+        elif response.status_code != 200:
+            st.error(f"Server returned status code: {response.status_code}")
             return []
             
         data = response.json()
         
+        # Check if we got any results
+        total_items = data.get('totalItems', 0)
+        if total_items == 0:
+            st.info(f"No books found for '{query}'")
+            return []
+            
         if 'items' not in data:
+            st.warning("Search returned no results")
             return []
             
         books = []
@@ -68,10 +84,16 @@ def search_google_books(query, max_results=10):
             }
             books.append(book)
         
+        if not books:
+            st.warning("No valid books found in the response")
+        
         return books
         
+    except requests.exceptions.ConnectionError:
+        st.error("Connection error. Please check your internet connection.")
+        return []
     except Exception as e:
-        st.error("An error occurred while searching for books.")
+        st.error("An unexpected error occurred while searching for books.")
         return []
 
 def get_book_details(google_id):
