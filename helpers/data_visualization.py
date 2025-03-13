@@ -1,5 +1,10 @@
-import plotly.express as px
-import plotly.graph_objects as go
+try:
+    import plotly.express as px
+    import plotly.graph_objects as go
+except ImportError:
+    import plotly
+    import plotly.express as px
+    import plotly.graph_objects as go
 import pandas as pd
 import streamlit as st
 from helpers.book_data import get_book_status_counts, get_genre_counts, get_year_counts
