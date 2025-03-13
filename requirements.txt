@@ -1,10 +1,7 @@
 streamlit
 pandas
-numpy
-plotly==5.18.0
-plotly-express==0.4.1
+plotly
 requests
 python-dotenv
 Pillow
 openai
-tenacity
