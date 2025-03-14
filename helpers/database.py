@@ -76,55 +76,24 @@ def add_book(book_data):
         st.error(f"❌ Error saving book: {str(e)}")
         return False
 
-def delete_book(book_id):
+def search_local_books(query):
     """
-    Delete a book from the database by its ID.
-    """
-    try:
-        db = get_database()
-        if db is not None:
-            books_collection = db.books
-            result = books_collection.delete_one({"id": book_id})
-            if result.deleted_count > 0:
-                print(f"✅ Book deleted with ID: {book_id}")  # Debug statement
-                return True
-        return False
-    except Exception as e:
-        st.error(f"❌ Error deleting book: {str(e)}")
-        return False
-
-def update_book(book_id, updated_data):
-    """
-    Update an existing book in the database.
+    Search for books in the local database.
     """
     try:
         db = get_database()
-        if db is not None:
+        if db and query:
             books_collection = db.books
-            # Update the book with the given ID
-            result = books_collection.update_one(
-                {"id": book_id},  # Find the book by its ID
-                {"$set": updated_data}  # Update the fields with new data
-            )
-            if result.modified_count > 0:
-                print(f"✅ Book updated with ID: {book_id}")  # Debug statement
-                return True
-        return False
+            search_query = {
+                "$or": [
+                    {"title": {"$regex": query, "$options": "i"}},
+                    {"author": {"$regex": query, "$options": "i"}},
+                    {"genre": {"$regex": query, "$options": "i"}}
+                ]
+            }
+            books = list(books_collection.find(search_query, {'_id': 0}))
+            return books
+        return []
     except Exception as e:
-        st.error(f"❌ Error updating book: {str(e)}")
-        return False
-
-def get_book_by_id(book_id):
-    """
-    Get a book by its ID from the database.
-    """
-    try:
-        db = get_database()
-        if db is not None:
-            books_collection = db.books
-            book = books_collection.find_one({"id": book_id}, {'_id': 0})
-            return book
-        return None
-    except Exception as e:
-        st.error(f"❌ Error getting book: {str(e)}")
-        return None
+        st.error(f"Error searching books: {str(e)}")
+        return []
