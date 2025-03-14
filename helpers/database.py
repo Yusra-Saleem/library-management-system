@@ -30,6 +30,12 @@ def get_database():
         st.error(f"❌ Database connection error: {str(e)}")
         return None
 
+def init_db():
+    """
+    Initialize the database (if needed).
+    """
+    pass  # Add any initialization logic here if required
+
 def get_all_books():
     """
     Fetch all books from the database.
@@ -46,7 +52,7 @@ def get_all_books():
         st.error(f"❌ Error loading books: {str(e)}")
         return []
 
-def save_book(book_data):
+def add_book(book_data):
     """
     Save a new book to the database.
     """
@@ -86,3 +92,39 @@ def delete_book(book_id):
     except Exception as e:
         st.error(f"❌ Error deleting book: {str(e)}")
         return False
+
+def update_book(book_id, updated_data):
+    """
+    Update an existing book in the database.
+    """
+    try:
+        db = get_database()
+        if db is not None:
+            books_collection = db.books
+            # Update the book with the given ID
+            result = books_collection.update_one(
+                {"id": book_id},  # Find the book by its ID
+                {"$set": updated_data}  # Update the fields with new data
+            )
+            if result.modified_count > 0:
+                print(f"✅ Book updated with ID: {book_id}")  # Debug statement
+                return True
+        return False
+    except Exception as e:
+        st.error(f"❌ Error updating book: {str(e)}")
+        return False
+
+def get_book_by_id(book_id):
+    """
+    Get a book by its ID from the database.
+    """
+    try:
+        db = get_database()
+        if db is not None:
+            books_collection = db.books
+            book = books_collection.find_one({"id": book_id}, {'_id': 0})
+            return book
+        return None
+    except Exception as e:
+        st.error(f"❌ Error getting book: {str(e)}")
+        return None
