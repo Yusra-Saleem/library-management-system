@@ -6,10 +6,10 @@ import os
 from helpers.database import add_book
 from helpers.book_api import search_books, get_book_details
 import time
+from helpers.book_data import save_book, load_books
 
 # Add the parent directory to the path so we can import helpers
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from helpers.book_data import save_book, load_books
 
 def show_add_book_page():
     """Display the add book page"""
@@ -33,54 +33,53 @@ def show_search_form():
     
     if search_clicked and search_query:
         with st.spinner("🔍 Searching for books..."):
-            results = search_books(search_query)
-            
-            if results:
-                st.success(f"Found {len(results)} books")
-                for i, book in enumerate(results):
-                    with st.container(border=True):
-                        col1, col2 = st.columns([3, 1])
-                        with col1:
-                            st.subheader(book['title'])
-                            st.write(f"**Author:** {book['author']}")
-                            st.write(f"**Year:** {book['year']}")
-                            st.write(f"**Genre:** {book['genre']}")
-                        if 'description' in book:
-                            with st.expander("Description"):
-                                st.write(book['description'])
-                        with col2:
-                            if book.get('cover_image'):
-                                st.image(book['cover_image'], width=100)
-                        
-                        # Add to Library button with unique key
-                        if st.button("Add to Library", key=f"add_{i}_{book['title']}"):
-                            with st.spinner("Adding to library..."):
-                                # Prepare book data
-                                book_data = {
-                                    'title': book['title'],
-                                    'author': book['author'],
-                                    'year': book['year'],
-                                    'genre': book['genre'],
-                                    'description': book.get('description', ''),
-                                    'cover_image': book.get('cover_image', ''),
-                                    'status': 'To Read',
-                                    'rating': 0,
-                                    'date_added': datetime.now().strftime('%Y-%m-%d')
-                                }
+            try:
+                results = search_books(search_query)
+                
+                if results:
+                    st.success(f"Found {len(results)} books")
+                    for i, book in enumerate(results):
+                        with st.container(border=True):
+                            col1, col2 = st.columns([3, 1])
+                            with col1:
+                                st.subheader(book['title'])
+                                st.write(f"**Author:** {book['author']}")
+                                if 'year' in book:
+                                    st.write(f"**Year:** {book['year']}")
+                                if 'genre' in book:
+                                    st.write(f"**Genre:** {book['genre']}")
+                                if 'description' in book:
+                                    with st.expander("Description"):
+                                        st.write(book['description'])
+                            with col2:
+                                if book.get('cover_image'):
+                                    st.image(book['cover_image'], width=100)
                                 
-                                # Save to database
-                                if save_book(book_data):
-                                    st.success(f"Added '{book['title']}' to your library!")
-                                    # Refresh the session state books
-                                    st.session_state.books = load_books()
-                                else:
-                                    st.error("Failed to add book to library")
-            else:
-                st.info("No books found. Try a different search term.")
+                                if st.button("Add to Library", key=f"add_{i}"):
+                                    with st.spinner("Adding to library..."):
+                                        book_data = {
+                                            'title': book['title'],
+                                            'author': book['author'],
+                                            'year': book.get('year', 'Unknown'),
+                                            'genre': book.get('genre', ''),
+                                            'description': book.get('description', ''),
+                                            'cover_image': book.get('cover_image', ''),
+                                            'status': 'To Read',
+                                            'rating': 0,
+                                            'date_added': datetime.now().strftime('%Y-%m-%d')
+                                        }
+                                        
+                                        if save_book(book_data):
+                                            st.success(f"Added '{book['title']}' to your library!")
+                                            st.session_state.books = load_books()
+                                        else:
+                                            st.error("Failed to add book to library")
+                else:
+                    st.info("No books found. Try a different search term.")
+            except Exception as e:
+                st.error(f"Error searching books: {str(e)}")
     elif search_clicked:
         st.warning("Please enter a search term")
-    else:
-        st.info("Enter a search term and click Search to find books")
 
 def show_manual_entry_form():
     """Display form for manual book entry"""
@@ -118,9 +117,7 @@ def show_manual_entry_form():
             
             if save_book(book_data):
                 st.success(f"Added '{title}' to your library!")
-                # Refresh the session state books
                 st.session_state.books = load_books()
-                # Clear the form
                 st.experimental_rerun()
             else:
                 st.error("Failed to add book to library")
