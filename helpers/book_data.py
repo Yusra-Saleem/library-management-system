@@ -10,15 +10,16 @@ MONGODB_URL = st.secrets["MONGODB"]["MONGODB_URL"]
 def get_database():
     try:
         # Get MongoDB URI from secrets
-        MONGODB_URI = st.secrets["MONGODB"]["MONGODB_URI"]
+        MONGODB_URI = st.secrets["MONGODB"]["MONGODB_URL"]
         # Create client
         client = MongoClient(MONGODB_URI)
         # Test connection
         client.admin.command('ping')
+        print("✅ Connected to MongoDB successfully!")  # Debug statement
         # Return database
         return client.library_database
     except Exception as e:
-        st.error(f"Database connection error: {str(e)}")
+        st.error(f"❌ Database connection error: {str(e)}")
         return None
 
 def load_books():
@@ -27,10 +28,11 @@ def load_books():
         if db is not None:
             books_collection = db.books
             books = list(books_collection.find({}, {'_id': 0}))
+            print(f"📚 Loaded {len(books)} books from the database")  # Debug statement
             return books
         return []
     except Exception as e:
-        st.error(f"Error loading books: {str(e)}")
+        st.error(f"❌ Error loading books: {str(e)}")
         return []
 
 def save_book(book_data):
@@ -47,10 +49,11 @@ def save_book(book_data):
             result = books_collection.insert_one(book_data)
             # Check if insertion was successful
             if result.inserted_id:
+                print(f"✅ Book inserted with ID: {result.inserted_id}")  # Debug statement
                 return True
         return False
     except Exception as e:
-        st.error(f"Error saving book: {str(e)}")
+        st.error(f"❌ Error saving book: {str(e)}")
         return False
 
 def get_book_status_counts(books):
