@@ -6,5 +6,4 @@ python-dotenv
 Pillow
 openai
 mysql-connector-python
-mongodb+srv
 mongodb
