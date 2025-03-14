@@ -13,72 +13,31 @@ from helpers.book_data import save_book, load_books
 
 def show_add_book_page():
     """Display the add book page"""
-    st.title("Add New Book")
+    st.title("Add Books")
     
-    # Create tabs
+    # Create tabs for different add methods
     tab1, tab2 = st.tabs(["📝 Manual Entry", "🔍 Search & Add"])
     
-    # Tab 1: Manual Entry
     with tab1:
-        with st.form("add_book_form"):
-            title = st.text_input("Title*")
-            author = st.text_input("Author*")
-            year = st.text_input("Year")
-            genre = st.text_input("Genre")
-            description = st.text_area("Description")
-            cover_image = st.text_input("Cover Image URL")
-            
-            status = st.selectbox("Reading Status", 
-                ["To Read", "Reading", "Read", "Wishlist"]
-            )
-            
-            rating = st.slider("Rating", 0, 5, 0)
-            
-            submitted = st.form_submit_button("Add Book")
-            
-            if submitted and title and author:
-                book_data = {
-                    'title': title,
-                    'author': author,
-                    'year': year,
-                    'genre': genre,
-                    'description': description,
-                    'cover_image': cover_image,
-                    'status': status,
-                    'rating': rating
-                }
-                
-                book_id = add_book(book_data)
-                if book_id:
-                    st.success(f"Book '{title}' added successfully!")
-                    st.rerun()
-                else:
-                    st.error("Error adding book")
-            elif submitted:
-                st.error("Title and Author are required!")
-
-    # Tab 2: Search & Add
+        show_manual_entry_form()
+    
     with tab2:
-        # Search form
-        with st.form("search_form"):
-            search_query = st.text_input("Enter book title, author, or ISBN")
-            search_submitted = st.form_submit_button("🔍 Search")
+        show_search_form()
+
+def show_search_form():
+    col1, col2 = st.columns([4, 1])
+    with col1:
+        search_query = st.text_input("Search for books", placeholder="Enter book title, author, or ISBN")
+    with col2:
+        search_clicked = st.button("🔍 Search", use_container_width=True)
+    
+    if search_clicked and search_query:
+        with st.spinner("🔍 Searching for books..."):
+            results = search_books(search_query)
             
-        if search_submitted and search_query:
-            # Add loading spinner and message
-            with st.spinner('🔍 Searching for books...'):
-                # Create a placeholder for results
-                results_placeholder = st.empty()
-                
-                # Perform search
-                books = search_books(search_query)
-                
-                if books:
-                    # Clear the placeholder and show results
-                    results_placeholder.empty()
-                    st.success(f"Found {len(books)} books")
-                    
-                    for idx, book in enumerate(books):
+            if results:
+                st.success(f"Found {len(results)} books")
+                for i, book in enumerate(results):
                         with st.container(border=True):
                             col1, col2 = st.columns([3, 1])
                             with col1:
@@ -86,27 +45,42 @@ def show_add_book_page():
                                 st.write(f"**Author:** {book['author']}")
                                 st.write(f"**Year:** {book['year']}")
                                 st.write(f"**Genre:** {book['genre']}")
-                                if book.get('description'):
-                                    st.write(f"**Description:** {book['description']}")
+                            if 'description' in book:
+                                with st.expander("Description"):
+                                    st.write(book['description'])
                             with col2:
                                 if book.get('cover_image'):
-                                    st.image(book['cover_image'], width=150)
-                                button_key = f"add_{idx}_{book['title'][:30]}"
-                                if st.button("Add to Library", key=button_key, type="primary"):
-                                    with st.spinner('Adding book to library...'):
-                                        book_id = add_book(book)
-                                        if book_id:
-                                            st.success(f"Book '{book['title']}' added to library!")
-                                            st.rerun()
+                                st.image(book['cover_image'], width=100)
+                            
+                            # Add to Library button with unique key
+                            if st.button("Add to Library", key=f"add_{i}_{book['title']}"):
+                                with st.spinner("Adding to library..."):
+                                    # Prepare book data
+                                    book_data = {
+                                        'title': book['title'],
+                                        'author': book['author'],
+                                        'year': book['year'],
+                                        'genre': book['genre'],
+                                        'description': book.get('description', ''),
+                                        'cover_image': book.get('cover_image', ''),
+                                        'status': 'To Read',
+                                        'rating': 0,
+                                        'date_added': datetime.now().strftime('%Y-%m-%d')
+                                    }
+                                    
+                                    # Save to database
+                                    if save_book(book_data):
+                                        st.success(f"Added '{book['title']}' to your library!")
+                                        # Refresh the session state books
+                                        st.session_state.books = load_books()
                                         else:
-                                            st.error("Error adding book")
+                                        st.error("Failed to add book to library")
                 else:
-                    # Show no results message
-                    results_placeholder.info("No books found. Try different search terms.")
-        elif search_submitted:
+                st.info("No books found. Try a different search term.")
+    elif search_clicked:
             st.warning("Please enter a search term")
         else:
-            st.info("Enter a book title, author, or ISBN and click Search to find books")
+        st.info("Enter a search term and click Search to find books")
 
 def show_manual_entry_form():
     """Display form for manual book entry"""
@@ -114,67 +88,42 @@ def show_manual_entry_form():
         st.subheader("Book Details")
         
         # Book fields
-        title = st.text_input("Title", key="manual_title")
-        author = st.text_input("Author", key="manual_author")
-        year = st.text_input("Publication Year", key="manual_year")
-        genre = st.text_input("Genre", key="manual_genre", 
-                             help="Enter genre (e.g., Fiction, Science Fiction, Biography)")
+        title = st.text_input("Title*", placeholder="Enter book title")
+        author = st.text_input("Author*", placeholder="Enter author name")
+        year = st.text_input("Year", placeholder="Publication year")
+        genre = st.text_input("Genre", placeholder="Book genre(s)")
+        description = st.text_area("Description", placeholder="Book description")
+        cover_image = st.text_input("Cover Image URL", placeholder="URL to book cover image")
+        status = st.selectbox("Reading Status", ["To Read", "Reading", "Read"])
+        rating = st.slider("Rating", 0, 5, 0)
         
-        # Reading status
-        status_options = ["To Read", "Reading", "Read", "Wishlist"]
-        status = st.selectbox("Reading Status", status_options, key="manual_status")
-        
-        # Additional fields
-        col1, col2 = st.columns(2)
-        with col1:
-            rating = st.slider("Your Rating", 0, 5, 0, key="manual_rating")
-        with col2:
-            pages = st.number_input("Number of Pages", min_value=0, key="manual_pages")
-        
-        notes = st.text_area("Notes", key="manual_notes")
-        
-        # Submit button
         submitted = st.form_submit_button("Add Book", use_container_width=True)
         
         if submitted:
             if not title or not author:
-                st.error("Title and author are required")
-            else:
-                # Create book dictionary
-                new_book = {
-                    "id": str(uuid.uuid4()),
-                    "title": title,
-                    "author": author,
-                    "year": year,
-                    "genre": genre,
-                    "status": status,
-                    "rating": rating,
-                    "pages": pages,
-                    "notes": notes,
-                    "date_added": datetime.now().strftime('%Y-%m-%d')
-                }
-                
-                # Save book
-                save_book(new_book)
-                
-                # Update session state
-                st.session_state.books = load_books()
-                
-                # Show success message
+                st.error("Title and Author are required!")
+                return
+            
+            book_data = {
+                'title': title,
+                'author': author,
+                'year': year,
+                'genre': genre,
+                'description': description,
+                'cover_image': cover_image,
+                'status': status,
+                'rating': rating,
+                'date_added': datetime.now().strftime('%Y-%m-%d')
+            }
+            
+            if save_book(book_data):
                 st.success(f"Added '{title}' to your library!")
-                
-                # Clear form fields
-                for key in st.session_state:
-                    if key.startswith("manual_"):
-                        st.session_state[key] = ""
-                if "manual_rating" in st.session_state:
-                    st.session_state["manual_rating"] = 0
-                if "manual_pages" in st.session_state:
-                    st.session_state["manual_pages"] = 0
-                
-                # Go back to home
-                st.session_state.current_page = 'home'
-                st.rerun()
+                # Refresh the session state books
+                st.session_state.books = load_books()
+                # Clear the form
+                st.experimental_rerun()
+            else:
+                st.error("Failed to add book to library")
 
 def show_google_books_search():
     """Display Google Books search interface"""
