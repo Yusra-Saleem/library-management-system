@@ -9,8 +9,8 @@ load_dotenv()
 # Google Books API endpoint
 GOOGLE_BOOKS_API_URL = "https://www.googleapis.com/books/v1/volumes"
 
-# API Key (not recommended for production)
-API_KEY = "AIzaSyBmi5kJxULV8VJqdYNqvf6ZcDptVQ_82VY"
+# Get API key from Streamlit secrets
+API_KEY = st.secrets["GOOGLE"]["GOOGLE_BOOKS_API_KEY"]
 
 def search_google_books(query, max_results=10):
     """
@@ -56,7 +56,8 @@ def search_google_books(query, max_results=10):
         
         return books
         
-    except:
+    except Exception as e:
+        st.error(f"Error searching books: {str(e)}")
         return []
 
 def get_book_details(google_id):
@@ -102,5 +103,6 @@ def get_book_details(google_id):
         
         return book_details
         
-    except:
+    except Exception as e:
+        st.error(f"Error fetching book details: {str(e)}")
         return {}
