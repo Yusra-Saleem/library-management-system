@@ -1,4 +1,13 @@
 import streamlit as st
+# First command must be set_page_config
+st.set_page_config(
+    page_title="Personal Library Management System",
+    page_icon="📚",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+# Then import other modules
 import pandas as pd
 import os
 import json
@@ -6,12 +15,13 @@ import sys
 import importlib
 import traceback
 from datetime import datetime
+from helpers.database import init_db, add_book, get_all_books, delete_book
 
 # Import helper modules
 # from helpers.theme import setup_page, toggle_theme
-from helpers.book_data import load_books, save_book, delete_book, get_book_status_counts
+from helpers.book_data import load_books, save_book, get_book_status_counts
 from helpers.data_visualization import create_reading_status_chart, create_genre_distribution_chart
-from helpers.book_api import search_google_books
+# from helpers.book_api import search_google_books
 from helpers.auth import show_login_page, show_register_page, get_current_user, logout_user, require_login
 
 # Import page modules using importlib to ensure they're freshly loaded
@@ -38,14 +48,6 @@ show_analytics_page = pages.analytics.show_analytics_page
 show_recommendations_page = pages.recommendations.show_recommendations_page
 show_import_export_page = pages.import_export.show_import_export_page
 
-# Set page configuration
-st.set_page_config(
-    page_title="Personal Library Management System",
-    page_icon="📚",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
-
 # Load custom CSS
 with open('assets/custom.css') as f:
     st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
@@ -56,7 +58,7 @@ if not os.path.exists('data'):
 
 # Initialize session state
 if 'books' not in st.session_state:
-    st.session_state.books = load_books()
+    st.session_state.books = get_all_books()
 # if 'dark_mode' not in st.session_state:
 #     st.session_state.dark_mode = False
 if 'current_page' not in st.session_state:
@@ -214,13 +216,14 @@ if st.session_state.current_page == 'home':
                     with col2:
                         if st.button(f"Delete 🗑️", key=f"delete_{i}", use_container_width=True):
                             delete_book(book.get('id'))
-                            st.session_state.books = load_books()
+                            st.session_state.books = get_all_books()
                             st.rerun()
     else:
         st.info("No books match your search criteria. Add some books or change your filters.")
 
 elif st.session_state.current_page == 'add_book':
     show_add_book_page()
+    st.session_state.books = get_all_books()
 elif st.session_state.current_page == 'edit_book':
     show_edit_book_page()
 elif st.session_state.current_page == 'search':
