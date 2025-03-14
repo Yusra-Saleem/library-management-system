@@ -1,15 +1,11 @@
-import os
 import json
 import random
+import streamlit as st
 from openai import OpenAI
 from helpers.book_data import load_books
-from dotenv import load_dotenv
 
-# Load environment variables from .env file
-load_dotenv()
-
-# Initialize OpenAI client
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+# Correctly getting API key from Streamlit secrets
+OPENAI_API_KEY = st.secrets["OPENAI"]["OPENAI_API_KEY"]
 openai = OpenAI(api_key=OPENAI_API_KEY)
 
 def get_book_recommendations(user_books, recommendation_type="similar"):
