@@ -5,11 +5,17 @@ import streamlit as st
 from pymongo import MongoClient
 
 # MongoDB Atlas connection (Free tier)
-MONGODB_URI = st.secrets["MONGODB"]["MONGODB_URL"]
+MONGODB_URL = st.secrets["MONGODB"]["MONGODB_URL"]
 
 def get_database():
     try:
+        # Get MongoDB URI from secrets
+        MONGODB_URI = st.secrets["MONGODB"]["MONGODB_URI"]
+        # Create client
         client = MongoClient(MONGODB_URI)
+        # Test connection
+        client.admin.command('ping')
+        # Return database
         return client.library_database
     except Exception as e:
         st.error(f"Database connection error: {str(e)}")
@@ -18,7 +24,7 @@ def get_database():
 def load_books():
     try:
         db = get_database()
-        if db:
+        if db is not None:
             books_collection = db.books
             books = list(books_collection.find({}, {'_id': 0}))
             return books
@@ -30,12 +36,18 @@ def load_books():
 def save_book(book_data):
     try:
         db = get_database()
-        if db:
+        if db is not None:  # Proper None check
             books_collection = db.books
+            # Add unique identifier if not present
+            if 'id' not in book_data:
+                book_data['id'] = str(datetime.now().timestamp())
             # Add timestamp
             book_data['date_added'] = datetime.now().strftime('%Y-%m-%d')
+            # Insert the book
             result = books_collection.insert_one(book_data)
-            return True
+            # Check if insertion was successful
+            if result.inserted_id:
+                return True
         return False
     except Exception as e:
         st.error(f"Error saving book: {str(e)}")
