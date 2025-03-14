@@ -72,6 +72,10 @@ if 'filter_status' not in st.session_state:
 if 'edit_book_id' not in st.session_state:
     st.session_state.edit_book_id = None
 
+# Initialize session state for library
+if 'library_data' not in st.session_state:
+    st.session_state['library_data'] = '[]'
+
 # Setup page with theme
 # setup_page()
 
