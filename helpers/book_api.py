@@ -1,10 +1,14 @@
 import requests
 import streamlit as st
+from helpers.database import add_book, get_all_books, search_local_books, init_db
 
 # Open Library API endpoint
 OPEN_LIBRARY_API_URL = "https://openlibrary.org/search.json"
 
-def search_google_books(query, max_results=10):
+# Initialize database
+init_db()
+
+def search_books(query, max_results=10):
     """
     Search for books using the Open Library API
     """
@@ -41,7 +45,9 @@ def search_google_books(query, max_results=10):
                 'year': str(doc.get('first_publish_year', 'Unknown')),
                 'genre': ', '.join(doc.get('subject', ['Unknown'])[:3]),  # Get first 3 subjects
                 'description': 'Available on Open Library',
-                'cover_image': f"https://covers.openlibrary.org/b/id/{doc.get('cover_i')}-M.jpg" if doc.get('cover_i') else None
+                'cover_image': f"https://covers.openlibrary.org/b/id/{doc.get('cover_i')}-M.jpg" if doc.get('cover_i') else None,
+                'status': 'To Read',
+                'rating': 0
             }
             books.append(book)
         
@@ -77,3 +83,15 @@ def get_book_details(book_id):
     except Exception as e:
         st.error(f"Error fetching book details: {str(e)}")
         return {}
+
+def save_book_to_library(book_data):
+    """Save a book to local database"""
+    return add_book(book_data)
+
+def get_library_books():
+    """Get all books from local library"""
+    return get_all_books()
+
+def search_library(query):
+    """Search books in local library"""
+    return search_local_books(query)
