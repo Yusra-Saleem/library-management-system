@@ -159,72 +159,6 @@ def show_manual_entry_form():
             else:
                 st.error("Failed to add book to library")
 
-def show_google_books_search():
-    """Display Google Books search interface"""
-    query = st.text_input("Search for books", key="google_search")
-    
-    if query:
-        with st.spinner("Searching..."):
-            books = search_books(query)
-        
-        if books:
-            st.write(f"Found {len(books)} results:")
-            
-            # Display search results in cards
-            for i, book in enumerate(books):
-                with st.container(border=True):
-                    col1, col2 = st.columns([3, 1])
-                    
-                    with col1:
-                        st.subheader(book['title'])
-                        st.write(f"**Author:** {book['author']}")
-                        st.write(f"**Year:** {book['year']}")
-                        st.write(f"**Genre:** {book['genre']}")
-                        
-                        if book.get('description'):
-                            with st.expander("Description"):
-                                st.write(book['description'][:300] + "..." if len(book['description']) > 300 else book['description'])
-                    
-                    with col2:
-                        if book.get('thumbnail'):
-                            st.image(book['thumbnail'], width=100)
-                        
-                        if st.button("Add to Library", key=f"add_google_{i}"):
-                            # Get detailed book info
-                            if book.get('google_id'):
-                                detailed_book = get_book_details(book['google_id'])
-                                if detailed_book:
-                                    book.update(detailed_book)
-                            
-                            # Create book dictionary
-                            new_book = {
-                                "id": str(uuid.uuid4()),
-                                "title": book['title'],
-                                "author": book['author'],
-                                "year": book['year'],
-                                "genre": book['genre'],
-                                "status": "To Read",
-                                "rating": 0,
-                                "pages": book.get('page_count', 0),
-                                "description": book.get('description', ''),
-                                "date_added": datetime.now().strftime('%Y-%m-%d')
-                            }
-                            
-                            # Save book
-                            save_book(new_book)
-                            
-                            # Update session state
-                            st.session_state.books = load_books()
-                            
-                            # Show success message
-                            st.success(f"Added '{book['title']}' to your library!")
-                            
-                            # Go back to home
-                            st.session_state.current_page = 'home'
-                            st.rerun()
-        else:
-            st.warning("No books found. Try another search term.")
-
 def add_book_from_search(book):
     with st.spinner("Adding to library..."):
         book_data = {
@@ -244,4 +178,3 @@ def add_book_from_search(book):
             st.session_state.books = load_books()
         else:
             st.error("Failed to add book to library")
-
