@@ -1,14 +1,16 @@
 import streamlit as st
+import random
+from datetime import datetime
 import sys
 import os
 
 # Add the parent directory to the path so we can import helpers
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from helpers.ai_recommendations import get_book_recommendations
-from helpers.book_api import search_google_books
+from helpers.book_api import search_books
 
 def show_recommendations_page():
-    """Display the book recommendations page"""
+    """Display the recommendations page"""
     st.title("Book Recommendations")
     
     books = st.session_state.books
@@ -52,8 +54,8 @@ def show_recommendations_page():
                         with st.expander("Why we recommend this"):
                             st.write(book.get('reason', ''))
                     
-                    # Add button to find on Google Books
-                    if st.button(f"Find on Google Books", key=f"find_{i}"):
+                    # Add button to find on Open Library
+                    if st.button(f"Find on Open Library", key=f"find_{i}"):
                         # Set search as the book title and author
                         search_query = f"{book.get('title', '')} {book.get('author', '')}"
                         st.session_state.rec_search_query = search_query
@@ -62,14 +64,14 @@ def show_recommendations_page():
         else:
             st.error("Failed to generate recommendations. Please try again.")
     
-    # Show Google Books search results if requested
+    # Show Open Library search results if requested
     if "show_rec_search" in st.session_state and st.session_state.show_rec_search:
         st.divider()
-        st.subheader("Google Books Search Results")
+        st.subheader("Open Library Search Results")
         
         query = st.session_state.rec_search_query
         with st.spinner("Searching..."):
-            search_results = search_google_books(query)
+            search_results = search_books(query)
         
         if search_results:
             # Display first 3 search results
@@ -88,8 +90,8 @@ def show_recommendations_page():
                                 st.write(book['description'][:300] + "..." if len(book['description']) > 300 else book['description'])
                     
                     with col2:
-                        if 'thumbnail' in book and book['thumbnail']:
-                            st.image(book['thumbnail'], width=100)
+                        if 'cover_image' in book and book['cover_image']:
+                            st.image(book['cover_image'], width=100)
         else:
             st.warning("No books found. Try another recommendation.")
         
