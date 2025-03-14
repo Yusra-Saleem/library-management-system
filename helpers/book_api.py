@@ -1,5 +1,6 @@
 import requests
 import streamlit as st
+from helpers.database import add_book, get_all_books, search_local_books
 
 # Open Library API endpoint
 OPEN_LIBRARY_API_URL = "https://openlibrary.org/search.json"
@@ -77,3 +78,15 @@ def get_book_details(book_id):
     except Exception as e:
         st.error(f"Error fetching book details: {str(e)}")
         return {}
+
+def save_book_to_library(book_data):
+    """Save a book to local database"""
+    return add_book(book_data)
+
+def get_library_books():
+    """Get all books from local library"""
+    return get_all_books()
+
+def search_library(query):
+    """Search books in local library"""
+    return search_local_books(query)
