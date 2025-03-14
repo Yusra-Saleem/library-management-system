@@ -1,215 +1,242 @@
-import mysql.connector
-from mysql.connector import pooling
+import sqlite3
 import streamlit as st
 from datetime import datetime
 
-# Database configuration
-DB_CONFIG = {
-    'pool_name': 'mypool',
-    'pool_size': 5,
-    'host': st.secrets["DB"]["HOST"],
-    'user': st.secrets["DB"]["USER"],
-    'password': st.secrets["DB"]["PASSWORD"],
-    'database': st.secrets["DB"]["NAME"]
-}
-
-# Create connection pool
-try:
-    connection_pool = mysql.connector.pooling.MySQLConnectionPool(**DB_CONFIG)
-except Exception as e:
-    st.error(f"Error creating connection pool: {str(e)}")
-
-def init_db():
-    """Initialize the database tables"""
+def add_book(book_data):
+    """Add a book to database"""
     try:
-        connection = connection_pool.get_connection()
-        cursor = connection.cursor()
-
-        # Create tables with proper indexing and foreign keys
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS users (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                username VARCHAR(100) NOT NULL UNIQUE,
-                email VARCHAR(255) NOT NULL UNIQUE,
-                password_hash VARCHAR(255) NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                INDEX idx_username (username),
-                INDEX idx_email (email)
+        conn = sqlite3.connect('library.db')
+        c = conn.cursor()
+        
+        c.execute('''
+            INSERT INTO books (
+                title, author, year, genre, description, 
+                cover_image, status, rating
             )
-        ''')
-
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS books (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                title VARCHAR(255) NOT NULL,
-                author VARCHAR(255),
-                year VARCHAR(4),
-                genre VARCHAR(255),
-                description TEXT,
-                cover_image TEXT,
-                user_id INT,
-                rating TINYINT CHECK (rating >= 1 AND rating <= 5),
-                status VARCHAR(50),
-                date_added TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                INDEX idx_title (title),
-                INDEX idx_author (author),
-                INDEX idx_user_id (user_id)
-            )
-        ''')
-
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS reading_lists (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                name VARCHAR(100) NOT NULL,
-                user_id INT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                INDEX idx_user_id (user_id)
-            )
-        ''')
-
-        connection.commit()
-        st.success("Database initialized successfully!")
-
-    except Exception as e:
-        st.error(f"Database initialization error: {str(e)}")
-    finally:
-        if 'cursor' in locals():
-            cursor.close()
-        if 'connection' in locals():
-            connection.close()
-
-def add_book(book_data, user_id=None):
-    """Add a book to the database"""
-    try:
-        connection = connection_pool.get_connection()
-        cursor = connection.cursor(dictionary=True)
-
-        query = '''
-            INSERT INTO books (title, author, year, genre, description, cover_image, user_id)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-        '''
-        values = (
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
             book_data['title'],
             book_data['author'],
-            book_data['year'],
-            book_data['genre'],
-            book_data['description'],
-            book_data['cover_image'],
-            user_id
-        )
-
-        cursor.execute(query, values)
-        connection.commit()
-        book_id = cursor.lastrowid
+            book_data.get('year', ''),
+            book_data.get('genre', ''),
+            book_data.get('description', ''),
+            book_data.get('cover_image', ''),
+            book_data.get('status', 'To Read'),
+            book_data.get('rating', 0)
+        ))
         
-        st.success(f"Book '{book_data['title']}' added successfully!")
+        conn.commit()
+        book_id = c.lastrowid
+        conn.close()
         return book_id
-
+        
     except Exception as e:
         st.error(f"Error adding book: {str(e)}")
         return None
-    finally:
-        if 'cursor' in locals():
-            cursor.close()
-        if 'connection' in locals():
-            connection.close()
 
-def get_all_books(user_id=None):
-    """Get all books from the database"""
-    try:
-        connection = connection_pool.get_connection()
-        cursor = connection.cursor(dictionary=True)
+def add_initial_books():
+    """Add initial set of books to the database"""
+    initial_books = [
+        {
+            'title': 'To Kill a Mockingbird',
+            'author': 'Harper Lee',
+            'year': '1960',
+            'genre': 'Fiction',
+            'description': 'A classic of modern American literature about justice and racial inequality in the American South.',
+            'cover_image': 'https://covers.openlibrary.org/b/id/7222246-L.jpg',
+            'status': 'Read',
+            'rating': 5
+        },
+        {
+            'title': '1984',
+            'author': 'George Orwell',
+            'year': '1949',
+            'genre': 'Dystopian',
+            'description': 'A dystopian novel about totalitarianism, surveillance, and the manipulation of truth.',
+            'cover_image': 'https://covers.openlibrary.org/b/id/7222236-L.jpg',
+            'status': 'Read',
+            'rating': 4
+        },
+        {
+            'title': 'Pride and Prejudice',
+            'author': 'Jane Austen',
+            'year': '1813',
+            'genre': 'Romance',
+            'description': 'A romantic novel about the Bennet family and the proud Mr. Darcy.',
+            'cover_image': 'https://covers.openlibrary.org/b/id/7222238-L.jpg',
+            'status': 'Reading',
+            'rating': 4
+        },
+        {
+            'title': 'The Great Gatsby',
+            'author': 'F. Scott Fitzgerald',
+            'year': '1925',
+            'genre': 'Fiction',
+            'description': 'A story of wealth, love, and the American Dream in the Roaring Twenties.',
+            'cover_image': 'https://covers.openlibrary.org/b/id/7222237-L.jpg',
+            'status': 'To Read',
+            'rating': 0
+        },
+        {
+            'title': 'Harry Potter and the Sorcerer\'s Stone',
+            'author': 'J.K. Rowling',
+            'year': '1997',
+            'genre': 'Fantasy',
+            'description': 'The first book in the Harry Potter series about a young wizard.',
+            'cover_image': 'https://covers.openlibrary.org/b/id/7222240-L.jpg',
+            'status': 'Read',
+            'rating': 5
+        },
+        {
+            'title': 'The Hobbit',
+            'author': 'J.R.R. Tolkien',
+            'year': '1937',
+            'genre': 'Fantasy',
+            'description': 'A fantasy novel about Bilbo Baggins and his quest to help reclaim a dwarf kingdom.',
+            'cover_image': 'https://covers.openlibrary.org/b/id/7222241-L.jpg',
+            'status': 'Read',
+            'rating': 5
+        },
+        {
+            'title': 'The Catcher in the Rye',
+            'author': 'J.D. Salinger',
+            'year': '1951',
+            'genre': 'Fiction',
+            'description': 'A story of teenage alienation and loss of innocence in New York City.',
+            'cover_image': 'https://covers.openlibrary.org/b/id/7222242-L.jpg',
+            'status': 'To Read',
+            'rating': 0
+        },
+        {
+            'title': 'The Lord of the Rings',
+            'author': 'J.R.R. Tolkien',
+            'year': '1954',
+            'genre': 'Fantasy',
+            'description': 'An epic high-fantasy novel about the quest to destroy the One Ring.',
+            'cover_image': 'https://covers.openlibrary.org/b/id/7222243-L.jpg',
+            'status': 'Reading',
+            'rating': 4
+        },
+        {
+            'title': 'Little Women',
+            'author': 'Louisa May Alcott',
+            'year': '1868',
+            'genre': 'Fiction',
+            'description': 'A story following the lives of the four March sisters.',
+            'cover_image': 'https://covers.openlibrary.org/b/id/7222244-L.jpg',
+            'status': 'Wishlist',
+            'rating': 0
+        },
+        {
+            'title': 'The Alchemist',
+            'author': 'Paulo Coelho',
+            'year': '1988',
+            'genre': 'Fiction',
+            'description': 'A philosophical story about following one\'s dreams.',
+            'cover_image': 'https://covers.openlibrary.org/b/id/7222245-L.jpg',
+            'status': 'Read',
+            'rating': 4
+        }
+    ]
 
-        if user_id:
-            query = 'SELECT * FROM books WHERE user_id = %s ORDER BY date_added DESC'
-            cursor.execute(query, (user_id,))
-        else:
-            query = 'SELECT * FROM books ORDER BY date_added DESC'
-            cursor.execute(query)
+    for book in initial_books:
+        add_book(book)
 
-        books = cursor.fetchall()
-        return books
+def init_db():
+    """Initialize the database"""
+    conn = sqlite3.connect('library.db')
+    c = conn.cursor()
+    
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS books (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            author TEXT,
+            year TEXT,
+            genre TEXT,
+            description TEXT,
+            cover_image TEXT,
+            status TEXT DEFAULT 'To Read',
+            rating INTEGER DEFAULT 0,
+            date_added TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    conn.commit()
+    conn.close()
 
-    except Exception as e:
-        st.error(f"Error fetching books: {str(e)}")
-        return []
-    finally:
-        if 'cursor' in locals():
-            cursor.close()
-        if 'connection' in locals():
-            connection.close()
+    # Check if database is empty
+    conn = sqlite3.connect('library.db')
+    c = conn.cursor()
+    c.execute('SELECT COUNT(*) FROM books')
+    count = c.fetchone()[0]
+    conn.close()
 
-def search_books(query, user_id=None):
+    # Add initial books if database is empty
+    if count == 0:
+        add_initial_books()
+
+def get_all_books():
+    """Get all books from database"""
+    conn = sqlite3.connect('library.db')
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    
+    c.execute('SELECT * FROM books ORDER BY date_added DESC')
+    books = [dict(row) for row in c.fetchall()]
+    
+    conn.close()
+    return books
+
+def search_local_books(query):
     """Search books in database"""
-    try:
-        connection = connection_pool.get_connection()
-        cursor = connection.cursor(dictionary=True)
-
-        search_query = f"%{query}%"
-        if user_id:
-            sql_query = '''
-                SELECT * FROM books 
-                WHERE user_id = %s AND
-                (title LIKE %s OR author LIKE %s OR genre LIKE %s)
-                ORDER BY date_added DESC
-            '''
-            cursor.execute(sql_query, (user_id, search_query, search_query, search_query))
-        else:
-            sql_query = '''
-                SELECT * FROM books 
-                WHERE title LIKE %s OR author LIKE %s OR genre LIKE %s
-                ORDER BY date_added DESC
-            '''
-            cursor.execute(sql_query, (search_query, search_query, search_query))
-
-        books = cursor.fetchall()
-        return books
-
-    except Exception as e:
-        st.error(f"Error searching books: {str(e)}")
-        return []
-    finally:
-        if 'cursor' in locals():
-            cursor.close()
-        if 'connection' in locals():
-            connection.close()
+    conn = sqlite3.connect('library.db')
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    
+    search_query = f"%{query}%"
+    c.execute('''
+        SELECT * FROM books 
+        WHERE title LIKE ? 
+        OR author LIKE ? 
+        OR genre LIKE ?
+    ''', (search_query, search_query, search_query))
+    
+    books = [dict(row) for row in c.fetchall()]
+    conn.close()
+    return books
 
 def update_book(book_id, book_data):
-    """Update book information"""
-    try:
-        connection = connection_pool.get_connection()
-        cursor = connection.cursor()
+    """Update book details"""
+    conn = sqlite3.connect('library.db')
+    c = conn.cursor()
+    
+    c.execute('''
+        UPDATE books 
+        SET title=?, author=?, year=?, genre=?, description=?, 
+            cover_image=?, status=?, rating=?
+        WHERE id=?
+    ''', (
+        book_data['title'],
+        book_data['author'],
+        book_data['year'],
+        book_data['genre'],
+        book_data['description'],
+        book_data['cover_image'],
+        book_data.get('status', 'To Read'),
+        book_data.get('rating', 0),
+        book_id
+    ))
+    
+    conn.commit()
+    conn.close()
 
-        query = '''
-            UPDATE books 
-            SET title = %s, author = %s, year = %s, genre = %s,
-                description = %s, cover_image = %s, status = %s, rating = %s
-            WHERE id = %s
-        '''
-        values = (
-            book_data['title'],
-            book_data['author'],
-            book_data['year'],
-            book_data['genre'],
-            book_data['description'],
-            book_data['cover_image'],
-            book_data.get('status'),
-            book_data.get('rating'),
-            book_id
-        )
-
-        cursor.execute(query, values)
-        connection.commit()
-        return True
-
-    except Exception as e:
-        st.error(f"Error updating book: {str(e)}")
-        return False
-    finally:
-        if 'cursor' in locals():
-            cursor.close()
-        if 'connection' in locals():
-            connection.close()
-          
+def delete_book(book_id):
+    """Delete a book"""
+    conn = sqlite3.connect('library.db')
+    c = conn.cursor()
+    
+    c.execute('DELETE FROM books WHERE id=?', (book_id,))
+    
+    conn.commit()
+    conn.close()
