@@ -32,9 +32,23 @@ def get_database():
 
 def init_db():
     """
-    Initialize the database (if needed).
+    Initialize the database and collections if they don't exist.
     """
-    pass  # Add any initialization logic here if required
+    try:
+        db = get_database()
+        if db is not None:
+            # Check if the 'books' collection exists
+            if 'books' not in db.list_collection_names():
+                # Create the 'books' collection
+                db.create_collection('books')
+                print("✅ Created 'books' collection.")  # Debug statement
+            else:
+                print("✅ 'books' collection already exists.")  # Debug statement
+            return True
+        return False
+    except Exception as e:
+        st.error(f"❌ Error initializing database: {str(e)}")
+        return False
 
 def get_all_books():
     """
@@ -76,24 +90,32 @@ def add_book(book_data):
         st.error(f"❌ Error saving book: {str(e)}")
         return False
 
-def search_local_books(query):
+def delete_book(book_id):
     """
-    Search for books in the local database.
+    Delete a book from the database by its ID.
     """
     try:
         db = get_database()
-        if db and query:
+        if db is not None:
             books_collection = db.books
-            search_query = {
-                "$or": [
-                    {"title": {"$regex": query, "$options": "i"}},
-                    {"author": {"$regex": query, "$options": "i"}},
-                    {"genre": {"$regex": query, "$options": "i"}}
-                ]
-            }
-            books = list(books_collection.find(search_query, {'_id': 0}))
-            return books
-        return []
+            result = books_collection.delete_one({"id": book_id})
+            if result.deleted_count > 0:
+                print(f"✅ Book deleted with ID: {book_id}")  # Debug statement
+                return True
+        return False
     except Exception as e:
-        st.error(f"Error searching books: {str(e)}")
-        return []
+        st.error(f"❌ Error deleting book: {str(e)}")
+        return False
+
+def update_book(book_id, updated_data):
+    """
+    Update an existing book in the database.
+    """
+    try:
+        db = get_database()
+        if db is not None:
+            books_collection = db.books
+            # Update the book with the given ID
+            result = books_collection.update_one(
+                {"id": book_id},  # Find the book by its ID
+                {"$set": updated_data}  # Update the
