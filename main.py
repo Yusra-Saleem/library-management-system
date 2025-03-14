@@ -15,13 +15,11 @@ import sys
 import importlib
 import traceback
 from datetime import datetime
-from helpers.database import init_db, add_book, get_all_books, delete_book
+from helpers.database import init_db, add_book, get_all_books, delete_book, update_book, get_book_by_id
 
 # Import helper modules
-# from helpers.theme import setup_page, toggle_theme
 from helpers.book_data import load_books, save_book, get_book_status_counts
 from helpers.data_visualization import create_reading_status_chart, create_genre_distribution_chart
-# from helpers.book_api import search_google_books
 from helpers.auth import show_login_page, show_register_page, get_current_user, logout_user, require_login
 
 # Import page modules using importlib to ensure they're freshly loaded
@@ -59,8 +57,6 @@ if not os.path.exists('data'):
 # Initialize session state
 if 'books' not in st.session_state:
     st.session_state.books = get_all_books()
-# if 'dark_mode' not in st.session_state:
-#     st.session_state.dark_mode = False
 if 'current_page' not in st.session_state:
     st.session_state.current_page = 'home'
 if 'search_query' not in st.session_state:
@@ -76,16 +72,9 @@ if 'edit_book_id' not in st.session_state:
 if 'library_data' not in st.session_state:
     st.session_state['library_data'] = '[]'
 
-# Setup page with theme
-# setup_page()
-
 # Sidebar
 with st.sidebar:
-   
     st.title(" My Library" )
-    
-    # # Dark/Light Mode Toggl
-    # toggle_theme()
     
     st.divider()
     
@@ -230,6 +219,7 @@ elif st.session_state.current_page == 'add_book':
     st.session_state.books = get_all_books()
 elif st.session_state.current_page == 'edit_book':
     show_edit_book_page()
+    st.session_state.books = get_all_books()
 elif st.session_state.current_page == 'search':
     show_search_page()
 elif st.session_state.current_page == 'analytics':
