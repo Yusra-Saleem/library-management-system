@@ -7,6 +7,7 @@ from helpers.database import add_book
 from helpers.book_api import search_books, get_book_details
 import time
 from helpers.book_data import save_book, load_books
+from helpers.database import get_all_books, save_book
 
 # Add the parent directory to the path so we can import helpers
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -101,7 +102,8 @@ def show_search_form():
                 st.error(f"Error searching books: {str(e)}")
     elif search_clicked:
         st.warning("Please enter a search term")
-        
+
+
 def show_manual_entry_form():
     """Display form for manual book entry"""
     st.markdown("""
@@ -156,7 +158,7 @@ def show_manual_entry_form():
                 st.success(f"Added '{title}' to your library!")
                 # Update session state
                 st.session_state.books = get_all_books()  # Refresh the book list
-                st.rerun()  # Use st.rerun() instead of st.experimental_rerun()
+                st.rerun()  # Use st.rerun() to refresh the page
             else:
                 st.error("Failed to add book to library")
 
