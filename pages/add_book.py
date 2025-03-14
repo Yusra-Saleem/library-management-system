@@ -109,21 +109,18 @@ def show_manual_entry_form():
         col1, col2 = st.columns(2)
         
         with col1:
-        title = st.text_input("Title*", placeholder="Enter book title")
-        author = st.text_input("Author*", placeholder="Enter author name")
-        year = st.text_input("Year", placeholder="Publication year")
-        genre = st.text_input("Genre", placeholder="Book genre(s)")
+            title = st.text_input("Title*", placeholder="Enter book title")
+            author = st.text_input("Author*", placeholder="Enter author name")
+            year = st.text_input("Year", placeholder="Publication year")
+            genre = st.text_input("Genre", placeholder="Book genre(s)")
         
         with col2:
-        description = st.text_area("Description", placeholder="Book description")
-        cover_image = st.text_input("Cover Image URL", placeholder="URL to book cover image")
-        status = st.selectbox("Reading Status", ["To Read", "Reading", "Read"])
-        rating = st.slider("Rating", 0, 5, 0)
+            description = st.text_area("Description", placeholder="Book description")
+            cover_image = st.text_input("Cover Image URL", placeholder="URL to book cover image")
+            status = st.selectbox("Reading Status", ["To Read", "Reading", "Read"])
+            rating = st.slider("Rating", 0, 5, 0)
         
-        # Center the submit button and make it prominent
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            submitted = st.form_submit_button("📚 Add Book", use_container_width=True, type="primary")
+        submitted = st.form_submit_button("📚 Add Book", type="primary", use_container_width=True)
         
         if submitted:
             if not title or not author:
@@ -214,6 +211,7 @@ def show_google_books_search():
                             st.rerun()
         else:
             st.warning("No books found. Try another search term.")
+
 def add_book_from_search(book):
     with st.spinner("Adding to library..."):
         book_data = {
