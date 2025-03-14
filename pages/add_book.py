@@ -245,3 +245,4 @@ def add_book_from_search(book):
         else:
             st.error("Failed to add book to library")
 
+
