@@ -101,7 +101,7 @@ def show_search_form():
                 st.error(f"Error searching books: {str(e)}")
     elif search_clicked:
         st.warning("Please enter a search term")
-
+        
 def show_manual_entry_form():
     """Display form for manual book entry"""
     st.markdown("""
@@ -154,8 +154,9 @@ def show_manual_entry_form():
             
             if save_book(book_data):
                 st.success(f"Added '{title}' to your library!")
-                st.session_state.books = load_books()
-                st.experimental_rerun()
+                # Update session state
+                st.session_state.books = get_all_books()  # Refresh the book list
+                st.rerun()  # Use st.rerun() instead of st.experimental_rerun()
             else:
                 st.error("Failed to add book to library")
 
