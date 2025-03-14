@@ -3,24 +3,110 @@ import uuid
 from datetime import datetime
 import sys
 import os
+from helpers.database import add_book
+from helpers.book_api import search_books, get_book_details
+import time
 
 # Add the parent directory to the path so we can import helpers
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from helpers.book_data import save_book, load_books
-from helpers.book_api import search_google_books, get_book_details
 
 def show_add_book_page():
     """Display the add book page"""
     st.title("Add New Book")
     
-    # Create tabs for manual entry and Google Books search
-    tab1, tab2 = st.tabs(["Manual Entry", "Search Google Books"])
+    # Create tabs
+    tab1, tab2 = st.tabs(["📝 Manual Entry", "🔍 Search & Add"])
     
+    # Tab 1: Manual Entry
     with tab1:
-        show_manual_entry_form()
-    
+        with st.form("add_book_form"):
+            title = st.text_input("Title*")
+            author = st.text_input("Author*")
+            year = st.text_input("Year")
+            genre = st.text_input("Genre")
+            description = st.text_area("Description")
+            cover_image = st.text_input("Cover Image URL")
+            
+            status = st.selectbox("Reading Status", 
+                ["To Read", "Reading", "Read", "Wishlist"]
+            )
+            
+            rating = st.slider("Rating", 0, 5, 0)
+            
+            submitted = st.form_submit_button("Add Book")
+            
+            if submitted and title and author:
+                book_data = {
+                    'title': title,
+                    'author': author,
+                    'year': year,
+                    'genre': genre,
+                    'description': description,
+                    'cover_image': cover_image,
+                    'status': status,
+                    'rating': rating
+                }
+                
+                book_id = add_book(book_data)
+                if book_id:
+                    st.success(f"Book '{title}' added successfully!")
+                    st.rerun()
+                else:
+                    st.error("Error adding book")
+            elif submitted:
+                st.error("Title and Author are required!")
+
+    # Tab 2: Search & Add
     with tab2:
-        show_google_books_search()
+        # Search form
+        with st.form("search_form"):
+            search_query = st.text_input("Enter book title, author, or ISBN")
+            search_submitted = st.form_submit_button("🔍 Search")
+            
+        if search_submitted and search_query:
+            # Add loading spinner and message
+            with st.spinner('🔍 Searching for books...'):
+                # Create a placeholder for results
+                results_placeholder = st.empty()
+                
+                # Perform search
+                books = search_books(search_query)
+                
+                if books:
+                    # Clear the placeholder and show results
+                    results_placeholder.empty()
+                    st.success(f"Found {len(books)} books")
+                    
+                    for idx, book in enumerate(books):
+                        with st.container(border=True):
+                            col1, col2 = st.columns([3, 1])
+                            with col1:
+                                st.subheader(book['title'])
+                                st.write(f"**Author:** {book['author']}")
+                                st.write(f"**Year:** {book['year']}")
+                                st.write(f"**Genre:** {book['genre']}")
+                                if book.get('description'):
+                                    st.write(f"**Description:** {book['description']}")
+                            with col2:
+                                if book.get('cover_image'):
+                                    st.image(book['cover_image'], width=150)
+                                button_key = f"add_{idx}_{book['title'][:30]}"
+                                if st.button("Add to Library", key=button_key, type="primary"):
+                                    with st.spinner('Adding book to library...'):
+                                        book_id = add_book(book)
+                                        if book_id:
+                                            st.success(f"Book '{book['title']}' added to library!")
+                                            st.rerun()
+                                        else:
+                                            st.error("Error adding book")
+                else:
+                    # Show no results message
+                    results_placeholder.info("No books found. Try different search terms.")
+        elif search_submitted:
+            st.warning("Please enter a search term")
+        else:
+            st.info("Enter a book title, author, or ISBN and click Search to find books")
 
 def show_manual_entry_form():
     """Display form for manual book entry"""
@@ -96,7 +182,7 @@ def show_google_books_search():
     
     if query:
         with st.spinner("Searching..."):
-            books = search_google_books(query)
+            books = search_books(query)
         
         if books:
             st.write(f"Found {len(books)} results:")
