@@ -3,24 +3,32 @@ import os
 from datetime import datetime
 import streamlit as st
 from pymongo import MongoClient
-
-# MongoDB Atlas connection (Free tier)
-MONGODB_URL = st.secrets["MONGODB"]["MONGODB_URL"]
+import certifi  # Import certifi for SSL certificate handling
 
 def get_database():
     try:
         # Get MongoDB URI from secrets
         MONGODB_URI = st.secrets["MONGODB"]["MONGODB_URL"]
-        # Create client
-        client = MongoClient(MONGODB_URI)
+        
+        # Create client with SSL/TLS configuration
+        client = MongoClient(
+            MONGODB_URI,
+            tls=True,  # Enable TLS/SSL
+            tlsCAFile=certifi.where(),  # Use certifi's CA bundle
+            retryWrites=True,
+            w="majority"
+        )
+        
         # Test connection
         client.admin.command('ping')
         print("✅ Connected to MongoDB successfully!")  # Debug statement
+        
         # Return database
         return client.library_database
     except Exception as e:
         st.error(f"❌ Database connection error: {str(e)}")
         return None
+
 
 def load_books():
     try:
