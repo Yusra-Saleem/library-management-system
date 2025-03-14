@@ -25,33 +25,46 @@ def show_add_book_page():
         show_search_form()
 
 def show_search_form():
+    # Add custom CSS for better button alignment
     st.markdown("""
         <style>
         .search-container {
             display: flex;
             align-items: center;
             gap: 10px;
+        padding: 10px;
+        background-color: #f0f2f6;
+        border-radius: 5px;
             margin-bottom: 20px;
         }
-        .book-card {
-            padding: 15px;
-            border-radius: 10px;
-            border: 1px solid #ddd;
-            margin-bottom: 15px;
-        }
-        .add-button {
-            width: 100%;
-            margin-top: 10px;
+    .stButton > button {
+        height: 42px;
+        padding: 0 20px;
+        background-color: #ff4b4b;
+        color: white;
+        border: none;
+        border-radius: 5px;
         }
         </style>
     """, unsafe_allow_html=True)
     
-    # Search bar and button in a container
-    search_col1, search_col2 = st.columns([4, 1])
-    with search_col1:
-        search_query = st.text_input("🔍", placeholder="Search by title, author, or ISBN", label_visibility="collapsed")
-    with search_col2:
-        search_clicked = st.button("Search", type="primary", use_container_width=True)
+    # Create a container for search elements
+    search_container = st.container()
+    with search_container:
+        col1, col2 = st.columns([5, 1])
+        with col1:
+            search_query = st.text_input(
+                "Search for books",
+                placeholder="Enter book title, author, or ISBN",
+                label_visibility="collapsed"
+            )
+        with col2:
+            search_clicked = st.button(
+                "🔍 Search",
+                type="primary",
+                use_container_width=True,
+                key="search_button"
+            )
     
     if search_clicked and search_query:
         with st.spinner("🔍 Searching for books..."):
