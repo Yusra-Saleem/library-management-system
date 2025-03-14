@@ -9,8 +9,12 @@ load_dotenv()
 # Google Books API endpoint
 GOOGLE_BOOKS_API_URL = "https://www.googleapis.com/books/v1/volumes"
 
-# Get API key from Streamlit secrets
-API_KEY = st.secrets["GOOGLE"]["GOOGLE_BOOKS_API_KEY"]
+# Add this debug code temporarily
+try:
+    api_key = st.secrets["GOOGLE"]["GOOGLE_BOOKS_API_KEY"]
+    st.write("API Key loaded successfully:", api_key[:10] + "...")  # Shows first 10 chars
+except Exception as e:
+    st.error(f"Error loading API key: {str(e)}")
 
 def search_google_books(query, max_results=10):
     """
@@ -24,7 +28,7 @@ def search_google_books(query, max_results=10):
         # Add API key to parameters
         params = {
             'q': query,
-            'key': API_KEY,
+            'key': api_key,
             'maxResults': max_results
         }
         
@@ -75,7 +79,7 @@ def get_book_details(google_id):
     
     try:
         params = {
-            'key': API_KEY
+            'key': api_key
         }
         
         response = requests.get(f"{GOOGLE_BOOKS_API_URL}/{google_id}", params=params)
