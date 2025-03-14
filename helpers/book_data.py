@@ -1,180 +1,150 @@
-import streamlit as st
-import uuid
-from datetime import datetime
-import sys
+import json
 import os
-from helpers.database import add_book
-from helpers.book_api import search_books, get_book_details
-import time
-from helpers.book_data import save_book, load_books
+from datetime import datetime
+import streamlit as st
+from pymongo import MongoClient
+import certifi  # Import certifi for SSL certificate handling
 
-# Add the parent directory to the path so we can import helpers
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+def get_database():
+    try:
+        # Get MongoDB URI from secrets
+        MONGODB_URI = st.secrets["MONGODB"]["MONGODB_URL"]
+        
+        # Create client with SSL/TLS configuration
+        client = MongoClient(
+            MONGODB_URI,
+            retryWrites=True,
+            w="majority"
+        )
+        
+        # Test connection
+        client.admin.command('ping')
+        print("✅ Connected to MongoDB successfully!")  # Debug statement
+        
+        # Return database
+        return client.library_database
+    except Exception as e:
+        st.error(f"❌ Database connection error: {str(e)}")
+        return None
 
-def show_add_book_page():
-    """Display the add book page"""
-    st.title("Add Books")
-    
-    # Create tabs for different add methods
-    tab1, tab2 = st.tabs(["📝 Manual Entry", "🔍 Search & Add"])
-    
-    with tab1:
-        show_manual_entry_form()
-    
-    with tab2:
-        show_search_form()
+def load_books():
+    try:
+        db = get_database()
+        if db is not None:
+            books_collection = db.books
+            books = list(books_collection.find({}, {'_id': 0}))
+            print(f"📚 Loaded {len(books)} books from the database")  # Debug statement
+            return books
+        return []
+    except Exception as e:
+        st.error(f"❌ Error loading books: {str(e)}")
+        return []
 
-def show_search_form():
-    # Add custom CSS for better button alignment
-    st.markdown("""
-        <style>
-        .search-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        padding: 10px;
-        background-color: #f0f2f6;
-        border-radius: 5px;
-            margin-bottom: 20px;
-        }
-    .stButton > button {
-        height: 42px;
-        padding: 0 20px;
-        background-color: #ff4b4b;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        }
-        </style>
-    """, unsafe_allow_html=True)
-    
-    # Create a container for search elements
-    search_container = st.container()
-    with search_container:
-        col1, col2 = st.columns([5, 1])
-        with col1:
-            search_query = st.text_input(
-                "Search for books",
-                placeholder="Enter book title, author, or ISBN",
-                label_visibility="collapsed"
-            )
-        with col2:
-            search_clicked = st.button(
-                "🔍 Search",
-                type="primary",
-                use_container_width=True,
-                key="search_button"
-            )
-    
-    if search_clicked and search_query:
-        with st.spinner("🔍 Searching for books..."):
-            try:
-                results = search_books(search_query)
-                
-                if results:
-                    st.success(f"Found {len(results)} books")
-                    for i, book in enumerate(results):
-                        with st.container(border=True):
-                            col1, col2 = st.columns([3, 1])
-                            with col1:
-                                st.markdown(f"### {book['title']}")
-                                st.markdown(f"**Author:** {book['author']}")
-                                if 'year' in book:
-                                    st.markdown(f"**Year:** {book['year']}")
-                                if 'genre' in book:
-                                    st.markdown(f"**Genre:** {book['genre']}")
-                                if 'description' in book:
-                                    with st.expander("Description"):
-                                        st.write(book['description'])
-                            
-                            with col2:
-                                if book.get('cover_image'):
-                                    st.image(book['cover_image'], width=100)
-                                st.button("📚 Add to Library", 
-                                        key=f"add_{i}", 
-                                        type="primary",
-                                        use_container_width=True,
-                                        on_click=lambda b=book: add_book_from_search(b))
-                else:
-                    st.info("No books found. Try a different search term.")
-            except Exception as e:
-                st.error(f"Error searching books: {str(e)}")
-    elif search_clicked:
-        st.warning("Please enter a search term")
+def save_book(book_data):
+    try:
+        db = get_database()
+        if db is not None:  # Proper None check
+            books_collection = db.books
+            # Add unique identifier if not present
+            if 'id' not in book_data:
+                book_data['id'] = str(datetime.now().timestamp())
+            # Add timestamp
+            book_data['date_added'] = datetime.now().strftime('%Y-%m-%d')
+            # Insert the book
+            result = books_collection.insert_one(book_data)
+            # Check if insertion was successful
+            if result.inserted_id:
+                print(f"✅ Book inserted with ID: {result.inserted_id}")  # Debug statement
+                return True
+        return False
+    except Exception as e:
+        st.error(f"❌ Error saving book: {str(e)}")
+        return False
 
-def show_manual_entry_form():
-    """Display form for manual book entry"""
-    st.markdown("""
-        <style>
-        .stButton > button {
-            width: 100%;
-            margin-top: 10px;
-        }
-        .stForm > div {
-            padding: 20px;
-            border-radius: 10px;
-            background-color: #f8f9fa;
-        }
-        </style>
-    """, unsafe_allow_html=True)
-    
-    with st.form("add_book_form", border=True):
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            title = st.text_input("Title*", placeholder="Enter book title")
-            author = st.text_input("Author*", placeholder="Enter author name")
-            year = st.text_input("Year", placeholder="Publication year")
-            genre = st.text_input("Genre", placeholder="Book genre(s)")
-        
-        with col2:
-            description = st.text_area("Description", placeholder="Book description")
-            cover_image = st.text_input("Cover Image URL", placeholder="URL to book cover image")
-            status = st.selectbox("Reading Status", ["To Read", "Reading", "Read"])
-            rating = st.slider("Rating", 0, 5, 0)
-        
-        submitted = st.form_submit_button("📚 Add Book", type="primary", use_container_width=True)
-        
-        if submitted:
-            if not title or not author:
-                st.error("Title and Author are required!")
-                return
-            
-            book_data = {
-                'title': title,
-                'author': author,
-                'year': year,
-                'genre': genre,
-                'description': description,
-                'cover_image': cover_image,
-                'status': status,
-                'rating': rating,
-                'date_added': datetime.now().strftime('%Y-%m-%d')
+def get_book_status_counts(books):
+    """Get counts of books by status"""
+    status_counts = {}
+    for book in books:
+        status = book.get('status', 'Unknown')
+        status_counts[status] = status_counts.get(status, 0) + 1
+    return status_counts
+
+def search_local_books(query):
+    try:
+        db = get_database()
+        if db and query:
+            books_collection = db.books
+            search_query = {
+                "$or": [
+                    {"title": {"$regex": query, "$options": "i"}},
+                    {"author": {"$regex": query, "$options": "i"}},
+                    {"genre": {"$regex": query, "$options": "i"}}
+                ]
             }
-            
-            if save_book(book_data):
-                st.success(f"Added '{title}' to your library!")
-                st.session_state.books = load_books()
-                st.experimental_rerun()
-            else:
-                st.error("Failed to add book to library")
+            books = list(books_collection.find(search_query, {'_id': 0}))
+            return books
+        return []
+    except Exception as e:
+        st.error(f"Error searching books: {str(e)}")
+        return []
 
-def add_book_from_search(book):
-    with st.spinner("Adding to library..."):
-        book_data = {
-            'title': book['title'],
-            'author': book['author'],
-            'year': book.get('year', 'Unknown'),
-            'genre': book.get('genre', ''),
-            'description': book.get('description', ''),
-            'cover_image': book.get('cover_image', ''),
-            'status': 'To Read',
-            'rating': 0,
-            'date_added': datetime.now().strftime('%Y-%m-%d')
-        }
-        
-        if save_book(book_data):
-            st.success(f"Added '{book['title']}' to your library!")
-            st.session_state.books = load_books()
-        else:
-            st.error("Failed to add book to library")
+def get_all_books():
+    return load_books()
+
+def add_book(book_data):
+    return save_book(book_data)
+
+def get_genre_counts(books):
+    """Get counts of books by genre"""
+    genre_counts = {}
+    for book in books:
+        genre = book.get('genre', 'Unknown')
+        if genre and genre != 'Unknown':
+            # Handle multiple genres separated by commas
+            for g in genre.split(', '):
+                genre_counts[g] = genre_counts.get(g, 0) + 1
+    return genre_counts
+
+def get_year_counts(books):
+    """Get counts of books by publication year"""
+    year_counts = {}
+    for book in books:
+        year = book.get('year', 'Unknown')
+        if year and year != 'Unknown':
+            try:
+                # Convert to string in case it's a number
+                year = str(year)
+                year_counts[year] = year_counts.get(year, 0) + 1
+            except Exception:
+                continue
+    return year_counts
+
+def get_book_by_id(book_id):
+    """Get a book by its ID from the database"""
+    try:
+        db = get_database()
+        if db:
+            books_collection = db.books
+            book = books_collection.find_one({"id": book_id}, {'_id': 0})
+            return book
+        return None
+    except Exception as e:
+        st.error(f"Error getting book: {str(e)}")
+        return None
+
+def save_books(books):
+    """Save multiple books to the database"""
+    try:
+        db = get_database()
+        if db:
+            books_collection = db.books
+            # Clear existing books
+            books_collection.delete_many({})
+            # Insert all books
+            if books:
+                books_collection.insert_many(books)
+            return True
+        return False
+    except Exception as e:
+        st.error(f"Error saving books: {str(e)}")
+        return False
