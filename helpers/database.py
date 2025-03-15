@@ -1,6 +1,6 @@
 import streamlit as st
 from pymongo import MongoClient
-import certifi  # Import certifi for SSL certificate handling
+import certifi  # For SSL certificate handling
 from datetime import datetime
 
 def get_database():
@@ -8,7 +8,7 @@ def get_database():
     Connect to MongoDB and return the database object.
     """
     try:
-        # Get MongoDB URI from secrets
+        # Get MongoDB URI from Streamlit secrets
         MONGODB_URI = st.secrets["MONGODB"]["MONGODB_URL"]
         
         # Create client with SSL/TLS configuration
@@ -24,7 +24,7 @@ def get_database():
         client.admin.command('ping')
         print("✅ Connected to MongoDB successfully!")  # Debug statement
         
-        # Return database
+        # Return the database
         return client.library_database
     except Exception as e:
         st.error(f"❌ Database connection error: {str(e)}")
@@ -72,7 +72,7 @@ def add_book(book_data):
     """
     try:
         db = get_database()
-        if db is not None:  # Proper None check
+        if db is not None:
             books_collection = db.books
             # Add unique identifier if not present
             if 'id' not in book_data:
@@ -96,7 +96,7 @@ def search_local_books(query):
     """
     try:
         db = get_database()
-        if db and query:
+        if db is not None and query:
             books_collection = db.books
             search_query = {
                 "$or": [
@@ -156,7 +156,7 @@ def get_book_by_id(book_id):
     """
     try:
         db = get_database()
-        if db is not None:
+        if db is not None:  # Explicitly check if db is not None
             books_collection = db.books
             book = books_collection.find_one({"id": book_id}, {'_id': 0})
             return book
