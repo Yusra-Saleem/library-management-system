@@ -1,5 +1,10 @@
 import streamlit as st
-from db_connection import get_book_by_id, update_book, get_all_books
+import sys
+import os
+
+# Add the parent directory to the path so we can import helpers
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from helpers.database import get_book_by_id, update_book, get_all_books
 
 def show_edit_book_page():
     """Display the edit book page"""
@@ -88,9 +93,11 @@ def show_edit_book_page():
                 # Save book
                 if update_book(book_id, updated_book):
                     st.success(f"Updated '{title}' in your library!")
-                    st.session_state.books = get_all_books()
+                    st.session_state.books = get_all_books()  # Refresh the book list
                     st.session_state.current_page = 'home'
                     st.rerun()
+                else:
+                    st.error("Failed to update the book.")
         
         if cancelled:
             st.session_state.current_page = 'home'
