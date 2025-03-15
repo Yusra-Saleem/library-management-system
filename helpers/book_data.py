@@ -166,6 +166,34 @@ def get_book_by_id(book_id):
         st.error(f"❌ Error getting book: {str(e)}")
         return None
 
+def update_book(book_id, updated_data):
+    """
+    Update an existing book in the database.
+    """
+    try:
+        db = get_database()
+        if db is not None:
+            books_collection = db.books
+
+            # Update the book with the given ID
+            result = books_collection.update_one(
+                {"id": book_id},  # Find the book by its ID
+                {"$set": updated_data}  # Update the fields with new data
+            )
+
+            if result.modified_count > 0:
+                print(f"✅ Book updated with ID: {book_id}")
+                return True
+            else:
+                print("❌ No changes made to the book.")
+                return False
+        else:
+            print("❌ Database connection failed.")
+            return False
+    except Exception as e:
+        st.error(f"❌ Error updating book: {str(e)}")
+        return False
+        
 def save_books(books):
     """
     Save multiple books to the database.
