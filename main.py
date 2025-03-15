@@ -17,6 +17,9 @@ import traceback
 from datetime import datetime
 from helpers.database import init_db, add_book, get_all_books, delete_book, update_book, get_book_by_id
 
+# Initialize the database
+init_db()
+
 # Import helper modules
 from helpers.book_data import load_books, save_book, get_book_status_counts
 from helpers.data_visualization import create_reading_status_chart, create_genre_distribution_chart
