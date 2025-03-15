@@ -1,14 +1,17 @@
 import streamlit as st
-import sys
-import os
-
-# Add the parent directory to the path so we can import helpers
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from helpers.book_data import get_book_by_id, save_book, load_books
+from db_connection import get_book_by_id, update_book, get_all_books
 
 def show_edit_book_page():
     """Display the edit book page"""
     st.title("Edit Book")
+    
+    # Ensure edit_book_id is set in session state
+    if 'edit_book_id' not in st.session_state:
+        st.error("No book selected for editing")
+        if st.button("Return to Home"):
+            st.session_state.current_page = 'home'
+            st.rerun()
+        return
     
     # Get the book to edit
     book_id = st.session_state.edit_book_id
@@ -83,17 +86,11 @@ def show_edit_book_page():
                         updated_book[key] = value
                 
                 # Save book
-                save_book(updated_book)
-                
-                # Update session state
-                st.session_state.books = load_books()
-                
-                # Show success message
-                st.success(f"Updated '{title}' in your library!")
-                
-                # Go back to home
-                st.session_state.current_page = 'home'
-                st.rerun()
+                if update_book(book_id, updated_book):
+                    st.success(f"Updated '{title}' in your library!")
+                    st.session_state.books = get_all_books()
+                    st.session_state.current_page = 'home'
+                    st.rerun()
         
         if cancelled:
             st.session_state.current_page = 'home'
