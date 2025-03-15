@@ -50,6 +50,7 @@ def export_to_json(books):
     
     return json_buffer
 
+
 def import_from_csv(file):
     """
     Import books from CSV file
@@ -180,3 +181,37 @@ def merge_books(existing_books, imported_books, strategy='replace'):
             result.append(imported_book)
             
         return result
+
+def save_books(books):
+    """
+    Save multiple books to the database.
+    
+    Args:
+        books (list): List of books to save
+        
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    try:
+        db = get_database()
+        if db is None:  # Explicitly check if database is None
+            print("❌ Database connection failed.")
+            return False
+        
+        books_collection = db.books
+        
+        # Insert all books
+        if books:
+            result = books_collection.insert_many(books)
+            if result.inserted_ids:
+                print(f"✅ Successfully saved {len(result.inserted_ids)} books.")
+                return True
+            else:
+                print("❌ Failed to save books.")
+                return False
+        else:
+            print("❌ No books to save.")
+            return False
+    except Exception as e:
+        st.error(f"❌ Error saving books: {str(e)}")
+        return False
