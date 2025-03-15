@@ -151,11 +151,17 @@ def get_book_by_id(book_id):
     """
     try:
         db = get_database()
-        if db:
+        if db is not None:  # Explicitly check if database is not None
             books_collection = db.books
             book = books_collection.find_one({"id": book_id}, {'_id': 0})
-            return book
-        return None
+            if book is not None:  # Explicitly check if book is not None
+                return book
+            else:
+                print(f"❌ Book with ID {book_id} not found in the database.")
+                return None
+        else:
+            print("❌ Database connection failed.")
+            return None
     except Exception as e:
         st.error(f"❌ Error getting book: {str(e)}")
         return None
