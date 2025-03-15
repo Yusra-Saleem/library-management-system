@@ -76,7 +76,20 @@ def show_search_form():
                         if book.get('cover_image'):
                             st.image(book['cover_image'], width=100)
                         if st.button("📚 Add to Library", key=f"add_{book['title']}"):
-                            if add_book(book):
+                            # Prepare book data for saving
+                            book_data = {
+                                'title': book['title'],
+                                'author': book['author'],
+                                'year': book['year'],
+                                'genre': book['genre'],
+                                'description': book.get('description', 'No description available.'),
+                                'cover_image': book.get('cover_image', ''),
+                                'status': 'To Read',  # Default status
+                                'rating': 0,  # Default rating
+                                'date_added': datetime.now().strftime('%Y-%m-%d')  # Add timestamp
+                            }
+                            
+                            if add_book(book_data):
                                 st.success(f"Added '{book['title']}' to your library!")
                                 st.session_state.books = get_all_books()  # Refresh the book list
                                 st.rerun()  # Refresh the page
