@@ -1,6 +1,6 @@
 import streamlit as st
 from pymongo import MongoClient
-import certifi  # Import certifi for SSL certificate handling
+import certifi
 from datetime import datetime
 
 def get_database():
@@ -8,23 +8,16 @@ def get_database():
     Connect to MongoDB and return the database object.
     """
     try:
-        # Get MongoDB URI from secrets
         MONGODB_URI = st.secrets["MONGODB"]["MONGODB_URL"]
-        
-        # Create client with SSL/TLS configuration
         client = MongoClient(
             MONGODB_URI,
-            tls=True,  # Enable TLS/SSL
-            tlsCAFile=certifi.where(),  # Use certifi's CA bundle
+            tls=True,
+            tlsCAFile=certifi.where(),
             retryWrites=True,
             w="majority"
         )
-        
-        # Test connection
         client.admin.command('ping')
-        print("✅ Connected to MongoDB successfully!")  # Debug statement
-        
-        # Return database
+        print("✅ Connected to MongoDB successfully!")
         return client.library_database
     except Exception as e:
         st.error(f"❌ Database connection error: {str(e)}")
@@ -37,20 +30,38 @@ def init_db():
     try:
         db = get_database()
         if db is not None:
-            # Check if the 'books' collection exists
             if 'books' not in db.list_collection_names():
-                # Create the 'books' collection
                 db.create_collection('books')
-                print("✅ Created 'books' collection.")  # Debug statement
+                print("✅ Created 'books' collection.")
             else:
-                print("✅ 'books' collection already exists.")  # Debug statement
+                print("✅ 'books' collection already exists.")
             return True
         return False
     except Exception as e:
         st.error(f"❌ Error initializing database: {str(e)}")
         return False
 
-def load_books():
+def add_book(book_data):
+    """
+    Save a new book to the database.
+    """
+    try:
+        db = get_database()
+        if db is not None:
+            books_collection = db.books
+            if 'id' not in book_data:
+                book_data['id'] = str(datetime.now().timestamp())
+            book_data['date_added'] = datetime.now().strftime('%Y-%m-%d')
+            result = books_collection.insert_one(book_data)
+            if result.inserted_id:
+                print(f"✅ Book inserted with ID: {result.inserted_id}")
+                return True
+        return False
+    except Exception as e:
+        st.error(f"❌ Error saving book: {str(e)}")
+        return False
+
+def get_all_books():
     """
     Fetch all books from the database.
     """
@@ -59,57 +70,11 @@ def load_books():
         if db is not None:
             books_collection = db.books
             books = list(books_collection.find({}, {'_id': 0}))
-            print(f"📚 Fetched {len(books)} books from the database")  # Debug statement
+            print(f"📚 Fetched {len(books)} books from the database")
             return books
         return []
     except Exception as e:
         st.error(f"❌ Error loading books: {str(e)}")
-        return []
-
-def save_book(book_data):
-    """
-    Save a new book to the database.
-    """
-    try:
-        db = get_database()
-        if db is not None:  # Proper None check
-            books_collection = db.books
-            # Add unique identifier if not present
-            if 'id' not in book_data:
-                book_data['id'] = str(datetime.now().timestamp())
-            # Add timestamp
-            book_data['date_added'] = datetime.now().strftime('%Y-%m-%d')
-            # Insert the book
-            result = books_collection.insert_one(book_data)
-            # Check if insertion was successful
-            if result.inserted_id:
-                print(f"✅ Book inserted with ID: {result.inserted_id}")  # Debug statement
-                return True
-        return False
-    except Exception as e:
-        st.error(f"❌ Error saving book: {str(e)}")
-        return False
-
-def search_local_books(query):
-    """
-    Search for books in the local database.
-    """
-    try:
-        db = get_database()
-        if db is not None and query:
-            books_collection = db.books
-            search_query = {
-                "$or": [
-                    {"title": {"$regex": query, "$options": "i"}},
-                    {"author": {"$regex": query, "$options": "i"}},
-                    {"genre": {"$regex": query, "$options": "i"}}
-                ]
-            }
-            books = list(books_collection.find(search_query, {'_id': 0}))
-            return books
-        return []
-    except Exception as e:
-        st.error(f"❌ Error searching books: {str(e)}")
         return []
 
 def delete_book(book_id):
@@ -122,7 +87,7 @@ def delete_book(book_id):
             books_collection = db.books
             result = books_collection.delete_one({"id": book_id})
             if result.deleted_count > 0:
-                print(f"✅ Book deleted with ID: {book_id}")  # Debug statement
+                print(f"✅ Book deleted with ID: {book_id}")
                 return True
         return False
     except Exception as e:
@@ -137,13 +102,12 @@ def update_book(book_id, updated_data):
         db = get_database()
         if db is not None:
             books_collection = db.books
-            # Update the book with the given ID
             result = books_collection.update_one(
-                {"id": book_id},  # Find the book by its ID
-                {"$set": updated_data}  # Update the fields with new data
+                {"id": book_id},
+                {"$set": updated_data}
             )
             if result.modified_count > 0:
-                print(f"✅ Book updated with ID: {book_id}")  # Debug statement
+                print(f"✅ Book updated with ID: {book_id}")
                 return True
         return False
     except Exception as e:
@@ -156,7 +120,7 @@ def get_book_by_id(book_id):
     """
     try:
         db = get_database()
-        if db is not None:  # Explicitly check if db is not None
+        if db is not None:
             books_collection = db.books
             book = books_collection.find_one({"id": book_id}, {'_id': 0})
             return book
