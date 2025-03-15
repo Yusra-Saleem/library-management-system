@@ -147,6 +147,7 @@ def show_import_section():
                 message = "Unsupported file type. Please upload a CSV or JSON file."
                 imported_books = []
             
+
             if success:
                 # Merge imported books with existing library
                 existing_books = load_books()
