@@ -4,7 +4,7 @@ import os
 
 # Add the parent directory to the path so we can import helpers
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from helpers.book_data import get_book_by_id, update_book, load_books
+from helpers.database import get_book_by_id, update_book, load_books
 
 def show_edit_book_page():
     """Display the edit book page"""
