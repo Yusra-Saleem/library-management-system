@@ -6,6 +6,9 @@ from pymongo import MongoClient
 import certifi  # Import certifi for SSL certificate handling
 
 def get_database():
+    """
+    Connect to MongoDB and return the database object.
+    """
     try:
         # Get MongoDB URI from secrets
         MONGODB_URI = st.secrets["MONGODB"]["MONGODB_URL"]
@@ -13,6 +16,8 @@ def get_database():
         # Create client with SSL/TLS configuration
         client = MongoClient(
             MONGODB_URI,
+            tls=True,  # Enable TLS/SSL
+            tlsCAFile=certifi.where(),  # Use certifi's CA bundle
             retryWrites=True,
             w="majority"
         )
@@ -28,6 +33,9 @@ def get_database():
         return None
 
 def load_books():
+    """
+    Fetch all books from the database.
+    """
     try:
         db = get_database()
         if db is not None:
@@ -41,6 +49,9 @@ def load_books():
         return []
 
 def save_book(book_data):
+    """
+    Save a new book to the database.
+    """
     try:
         db = get_database()
         if db is not None:  # Proper None check
@@ -62,7 +73,9 @@ def save_book(book_data):
         return False
 
 def get_book_status_counts(books):
-    """Get counts of books by status"""
+    """
+    Get counts of books by status.
+    """
     status_counts = {}
     for book in books:
         status = book.get('status', 'Unknown')
@@ -70,6 +83,9 @@ def get_book_status_counts(books):
     return status_counts
 
 def search_local_books(query):
+    """
+    Search for books in the local database.
+    """
     try:
         db = get_database()
         if db and query:
@@ -85,17 +101,25 @@ def search_local_books(query):
             return books
         return []
     except Exception as e:
-        st.error(f"Error searching books: {str(e)}")
+        st.error(f"❌ Error searching books: {str(e)}")
         return []
 
 def get_all_books():
+    """
+    Fetch all books from the database.
+    """
     return load_books()
 
 def add_book(book_data):
+    """
+    Save a new book to the database.
+    """
     return save_book(book_data)
 
 def get_genre_counts(books):
-    """Get counts of books by genre"""
+    """
+    Get counts of books by genre.
+    """
     genre_counts = {}
     for book in books:
         genre = book.get('genre', 'Unknown')
@@ -106,7 +130,9 @@ def get_genre_counts(books):
     return genre_counts
 
 def get_year_counts(books):
-    """Get counts of books by publication year"""
+    """
+    Get counts of books by publication year.
+    """
     year_counts = {}
     for book in books:
         year = book.get('year', 'Unknown')
@@ -120,7 +146,9 @@ def get_year_counts(books):
     return year_counts
 
 def get_book_by_id(book_id):
-    """Get a book by its ID from the database"""
+    """
+    Get a book by its ID from the database.
+    """
     try:
         db = get_database()
         if db:
@@ -129,11 +157,13 @@ def get_book_by_id(book_id):
             return book
         return None
     except Exception as e:
-        st.error(f"Error getting book: {str(e)}")
+        st.error(f"❌ Error getting book: {str(e)}")
         return None
 
 def save_books(books):
-    """Save multiple books to the database"""
+    """
+    Save multiple books to the database.
+    """
     try:
         db = get_database()
         if db:
@@ -146,5 +176,5 @@ def save_books(books):
             return True
         return False
     except Exception as e:
-        st.error(f"Error saving books: {str(e)}")
+        st.error(f"❌ Error saving books: {str(e)}")
         return False
