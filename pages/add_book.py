@@ -59,6 +59,7 @@ def show_manual_entry_form():
             else:
                 st.error("Failed to add book to library")
 
+
 def show_search_form():
     """Display form for searching and adding books"""
     search_query = st.text_input("Search for books", placeholder="Enter book title, author, or ISBN")
