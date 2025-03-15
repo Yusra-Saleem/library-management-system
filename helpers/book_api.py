@@ -10,11 +10,12 @@ init_db()
 
 def search_books(query, max_results=10):
     """
-    Search for books using the Open Library API
+    Search for books using the Open Library API.
     """
     try:
         # Clean and validate the query
         if not query or len(query.strip()) == 0:
+            st.warning("Please enter a search query.")
             return []
         
         # Parameters for Open Library API
@@ -29,12 +30,14 @@ def search_books(query, max_results=10):
         
         # Check response status
         if response.status_code != 200:
+            st.error(f"Error fetching data from Open Library: {response.status_code}")
             return []
         
         data = response.json()
         
         # Check if we got any results
         if 'docs' not in data or not data['docs']:
+            st.info("No books found. Try a different search term.")
             return []
         
         books = []
@@ -59,12 +62,13 @@ def search_books(query, max_results=10):
 
 def get_book_details(book_id):
     """
-    Get detailed information about a specific book from Open Library
+    Get detailed information about a specific book from Open Library.
     """
     try:
         response = requests.get(f"https://openlibrary.org/works/{book_id}.json")
         
         if response.status_code != 200:
+            st.error(f"Error fetching book details: {response.status_code}")
             return {}
         
         data = response.json()
@@ -85,13 +89,25 @@ def get_book_details(book_id):
         return {}
 
 def save_book_to_library(book_data):
-    """Save a book to local database"""
-    return add_book(book_data)
+    """Save a book to local database."""
+    try:
+        return add_book(book_data)
+    except Exception as e:
+        st.error(f"Error saving book to library: {str(e)}")
+        return False
 
 def get_library_books():
-    """Get all books from local library"""
-    return get_all_books()
+    """Get all books from local library."""
+    try:
+        return get_all_books()
+    except Exception as e:
+        st.error(f"Error fetching library books: {str(e)}")
+        return []
 
 def search_library(query):
-    """Search books in local library"""
-    return search_local_books(query)
+    """Search books in local library."""
+    try:
+        return search_local_books(query)
+    except Exception as e:
+        st.error(f"Error searching library: {str(e)}")
+        return []
