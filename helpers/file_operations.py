@@ -203,7 +203,7 @@ def save_books(books):
         # Insert all books
         if books:
             result = books_collection.insert_many(books)
-            if result.inserted_ids:
+            if result and result.inserted_ids:  # Explicitly check if result is not None
                 print(f"✅ Successfully saved {len(result.inserted_ids)} books.")
                 return True
             else:
