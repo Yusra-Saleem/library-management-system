@@ -10,7 +10,8 @@ from helpers.file_operations import (
     export_to_json, 
     import_from_csv, 
     import_from_json,
-    merge_books
+    merge_books ,
+    save_books,
 )
 from helpers.book_data import load_books, save_books
 
@@ -152,24 +153,25 @@ def show_import_section():
                 merged_books = merge_books(existing_books, imported_books, strategy)
                 
                 # Save merged books
-                save_books(merged_books)
-                
-                # Update session state
-                st.session_state.books = merged_books
-                
-                # Show success message
-                st.success(f"{message} - Added to your library!")
-                
-                # Display preview of imported books
-                st.subheader("Imported Books Preview")
-                
-                # Create a DataFrame for display
-                df = pd.DataFrame(imported_books)
-                st.dataframe(df)
-                
-                # Option to return home
-                if st.button("Return to Home"):
-                    st.session_state.current_page = 'home'
-                    st.rerun()
+                if save_books(merged_books):
+                    # Update session state
+                    st.session_state.books = merged_books
+                    
+                    # Show success message
+                    st.success(f"{message} - Added to your library!")
+                    
+                    # Display preview of imported books
+                    st.subheader("Imported Books Preview")
+                    
+                    # Create a DataFrame for display
+                    df = pd.DataFrame(imported_books)
+                    st.dataframe(df)
+                    
+                    # Option to return home
+                    if st.button("Return to Home"):
+                        st.session_state.current_page = 'home'
+                        st.rerun()
+                else:
+                    st.error("Failed to save imported books to the database.")
             else:
                 st.error(message)
