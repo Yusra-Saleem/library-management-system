@@ -50,7 +50,7 @@ def init_db():
         st.error(f"❌ Error initializing database: {str(e)}")
         return False
 
-def get_all_books():
+def load_books():
     """
     Fetch all books from the database.
     """
@@ -66,7 +66,7 @@ def get_all_books():
         st.error(f"❌ Error loading books: {str(e)}")
         return []
 
-def add_book(book_data):
+def save_book(book_data):
     """
     Save a new book to the database.
     """
