@@ -90,6 +90,28 @@ def add_book(book_data):
         st.error(f"❌ Error saving book: {str(e)}")
         return False
 
+def search_local_books(query):
+    """
+    Search for books in the local database.
+    """
+    try:
+        db = get_database()
+        if db and query:
+            books_collection = db.books
+            search_query = {
+                "$or": [
+                    {"title": {"$regex": query, "$options": "i"}},
+                    {"author": {"$regex": query, "$options": "i"}},
+                    {"genre": {"$regex": query, "$options": "i"}}
+                ]
+            }
+            books = list(books_collection.find(search_query, {'_id': 0}))
+            return books
+        return []
+    except Exception as e:
+        st.error(f"❌ Error searching books: {str(e)}")
+        return []
+
 def delete_book(book_id):
     """
     Delete a book from the database by its ID.
