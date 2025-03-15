@@ -179,10 +179,12 @@ def merge_books(existing_books, imported_books, strategy='replace'):
             result.append(imported_book)
             
         return result
-
+        
 def save_books(books):
     """
     Save multiple books to the database.
+    If a book already exists (based on ID), it will be updated.
+    Otherwise, a new book will be added.
     
     Args:
         books (list): List of books to save
@@ -198,18 +200,21 @@ def save_books(books):
         
         books_collection = db.books
         
-        # Insert all books
-        if books:
-            result = books_collection.insert_many(books)
-            if result and result.inserted_ids:  # Explicitly check if result is not None
-                print(f"✅ Successfully saved {len(result.inserted_ids)} books.")
-                return True
+        # Save or update each book
+        for book in books:
+            # Check if the book already exists
+            existing_book = books_collection.find_one({"id": book["id"]})
+            
+            if existing_book:
+                # Update the existing book
+                books_collection.replace_one({"id": book["id"]}, book)
+                print(f"✅ Updated book with ID: {book['id']}")
             else:
-                print("❌ Failed to save books.")
-                return False
-        else:
-            print("❌ No books to save.")
-            return False
+                # Add a new book
+                books_collection.insert_one(book)
+                print(f"✅ Added new book with ID: {book['id']}")
+        
+        return True
     except Exception as e:
         st.error(f"❌ Error saving books: {str(e)}")
         return False
