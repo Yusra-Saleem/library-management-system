@@ -96,7 +96,7 @@ def search_local_books(query):
     """
     try:
         db = get_database()
-        if db is not None and query:  # Ensure db is not None and query is not empty
+        if db is not None and query:
             books_collection = db.books
             search_query = {
                 "$or": [
@@ -159,10 +159,6 @@ def get_book_by_id(book_id):
         if db is not None:  # Explicitly check if db is not None
             books_collection = db.books
             book = books_collection.find_one({"id": book_id}, {'_id': 0})
-            if book:
-                print(f"📖 Found book: {book.get('title')}")  # Debug statement
-            else:
-                print("❌ Book not found in the database")  # Debug statement
             return book
         return None
     except Exception as e:
