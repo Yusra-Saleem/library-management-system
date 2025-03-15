@@ -1,6 +1,7 @@
 import streamlit as st
-from helpers.book_api import search_books, get_book_details
+from datetime import datetime  # Import datetime module
 from helpers.database import add_book, get_all_books
+from helpers.book_api import search_books
 
 def show_add_book_page():
     """Display the add book page"""
@@ -48,13 +49,13 @@ def show_manual_entry_form():
                 'cover_image': cover_image,
                 'status': status,
                 'rating': rating,
-                'date_added': datetime.now().strftime('%Y-%m-%d')
+                'date_added': datetime.now().strftime('%Y-%m-%d')  # Use datetime module
             }
             
             if add_book(book_data):
                 st.success(f"Added '{title}' to your library!")
-                st.session_state.books = get_all_books()
-                st.rerun()
+                st.session_state.books = get_all_books()  # Refresh the book list
+                st.rerun()  # Refresh the page
             else:
                 st.error("Failed to add book to library")
 
@@ -77,8 +78,8 @@ def show_search_form():
                         if st.button("📚 Add to Library", key=f"add_{book['title']}"):
                             if add_book(book):
                                 st.success(f"Added '{book['title']}' to your library!")
-                                st.session_state.books = get_all_books()
-                                st.rerun()
+                                st.session_state.books = get_all_books()  # Refresh the book list
+                                st.rerun()  # Refresh the page
                             else:
                                 st.error("Failed to add book to library")
             else:
