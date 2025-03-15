@@ -1,11 +1,10 @@
-
 import streamlit as st
 import sys
 import os
 
 # Add the parent directory to the path so we can import helpers
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from helpers.book_data import get_book_by_id, save_book, load_books
+from helpers.book_data import get_book_by_id, update_book, load_books
 
 def show_edit_book_page():
     """Display the edit book page"""
@@ -58,38 +57,39 @@ def show_edit_book_page():
             cancelled = st.form_submit_button("Cancel", use_container_width=True)
         with col2:
             submitted = st.form_submit_button("Save Changes", use_container_width=True)
-      if submitted:
-    if not title or not author:
-        st.error("Title and author are required")
-    else:
-        # Update book dictionary
-        updated_book = {
-            "id": book_id,
-            "title": title,
-            "author": author,
-            "year": year,
-            "genre": genre,
-            "status": status,
-            "rating": rating,
-            "pages": pages,
-            "progress": progress,
-            "notes": notes,
-            "date_added": book.get('date_added')
-        }
-
-        # Preserve other fields
-        for key, value in book.items():
-            if key not in updated_book:
-                updated_book[key] = value
-
-        # Update book using update_book function
-        if update_book(book_id, updated_book):
-            st.success(f"Updated '{title}' in your library!")
-            st.session_state.books = load_books()  # Refresh the book list
-            st.session_state.current_page = 'home'  # Return to home page
-            st.rerun()
-        else:
-            st.error("Failed to update the book. Please try again.")
+        
+        if submitted:
+            if not title or not author:
+                st.error("Title and author are required")
+            else:
+                # Update book dictionary
+                updated_book = {
+                    "id": book_id,
+                    "title": title,
+                    "author": author,
+                    "year": year,
+                    "genre": genre,
+                    "status": status,
+                    "rating": rating,
+                    "pages": pages,
+                    "progress": progress,
+                    "notes": notes,
+                    "date_added": book.get('date_added')
+                }
+                
+                # Preserve other fields
+                for key, value in book.items():
+                    if key not in updated_book:
+                        updated_book[key] = value
+                
+                # Update book using update_book function
+                if update_book(book_id, updated_book):
+                    st.success(f"Updated '{title}' in your library!")
+                    st.session_state.books = load_books()  # Refresh the book list
+                    st.session_state.current_page = 'home'  # Return to home page
+                    st.rerun()
+                else:
+                    st.error("Failed to update the book. Please try again.")
         
         if cancelled:
             st.session_state.current_page = 'home'
