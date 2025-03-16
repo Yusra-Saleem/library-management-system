@@ -194,21 +194,43 @@ def update_book(book_id, updated_data):
         st.error(f"❌ Error updating book: {str(e)}")
         return False
         
+
 def save_books(books):
-    """
-    Save multiple books to the database.
-    """
+    """Save multiple books to the database with update handling"""
     try:
         db = get_database()
-        if db:
-            books_collection = db.books
-            # Clear existing books
-            books_collection.delete_many({})
-            # Insert all books
-            if books:
-                books_collection.insert_many(books)
+        if db is None:
+            st.error("Database connection failed")
+            return False
+
+        books_collection = db.books
+        operations = []
+
+        for book in books:
+            # Create update operation
+            operations.append(
+                {
+                    'update_one': {
+                        'filter': {'id': book['id']},
+                        'update': {'$set': book},
+                        'upsert': True
+                    }
+                }
+            )
+
+        if operations:
+            result = books_collection.bulk_write(operations)
+            st.session_state.books = load_books()  # Refresh session state
             return True
         return False
     except Exception as e:
-        st.error(f"❌ Error saving books: {str(e)}")
+        st.error(f"Error saving books: {str(e)}")
         return False
+
+def get_book_status_counts(books):
+    """Get counts of books by status"""
+    status_counts = {}
+    for book in books:
+        status = book.get('status', 'Unknown')
+        status_counts[status] = status_counts.get(status, 0) + 1
+    return status_counts
