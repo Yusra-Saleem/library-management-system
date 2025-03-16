@@ -195,36 +195,72 @@ def update_book(book_id, updated_data):
         return False
         
 
+
 def save_books(books):
-    """Save multiple books to the database with update handling"""
+    """
+    Save multiple books to the database.
+    
+    Args:
+        books (list): List of books to save
+        
+    Returns:
+        bool: True if successful, False otherwise
+    """
     try:
         db = get_database()
-        if db is None:
-            st.error("Database connection failed")
+        if db is None:  # Explicitly check if database is None
+            print("❌ Database connection failed.")
             return False
-
+        
         books_collection = db.books
-        operations = []
-
-        for book in books:
-            # Create update operation
-            operations.append(
-                {
-                    'update_one': {
-                        'filter': {'id': book['id']},
-                        'update': {'$set': book},
-                        'upsert': True
-                    }
-                }
-            )
-
-        if operations:
-            result = books_collection.bulk_write(operations)
-            st.session_state.books = load_books()  # Refresh session state
-            return True
-        return False
+        
+        # Insert all books
+        if books:
+            result = books_collection.insert_many(books)
+            if result.inserted_ids:  # Directly check inserted_ids
+                print(f"✅ Successfully saved {len(result.inserted_ids)} books.")
+                return True
+            else:
+                print("❌ Failed to save books.")
+                return False
+        else:
+            print("❌ No books to save.")
+            return False
     except Exception as e:
-        st.error(f"Error saving books: {str(e)}")
+        st.error(f"❌ Error saving books: {str(e)}")
+        return False
+
+def update_book_status(book_id, new_status):
+    """
+    Update the status of a book in the database.
+    
+    Args:
+        book_id (str): ID of the book to update
+        new_status (str): New status to set ('To Read', 'Reading', 'Read')
+        
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    try:
+        db = get_database()
+        if db is None:  # Explicitly check if database is None
+            print("❌ Database connection failed.")
+            return False
+        
+        books_collection = db.books
+        result = books_collection.update_one(
+            {"id": book_id},
+            {"$set": {"status": new_status}}
+        )
+        
+        if result.modified_count > 0:
+            print(f"✅ Updated book status for ID: {book_id}")
+            return True
+        else:
+            print("❌ No changes made to the book.")
+            return False
+    except Exception as e:
+        st.error(f"❌ Error updating book status: {str(e)}")
         return False
 
 def get_book_status_counts(books):
