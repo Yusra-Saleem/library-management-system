@@ -50,7 +50,7 @@ def show_recommendations_page():
                             st.write(book.get('reason', ''))
                     
                     # Add button to find on Open Library
-                    if st.button(f"Find on Open Library", key=f"find_{i}"):
+                    if st.button(f"Okay! Thank You", key=f"find_{i}"):
                         # Set search as the book title and author
                         search_query = f"{book.get('title', '')} {book.get('author', '')}"
                         st.session_state.rec_search_query = search_query
@@ -140,7 +140,7 @@ def show_recommendations_page():
                 suggested_book = to_read_books_with_date[0]
                 
                 st.write(f"- **{suggested_book.get('title', 'Unknown')}** by {suggested_book.get('author', 'Unknown')}")
-                if st.button("Start Reading"):
+                if st.button("Update Status"):
                     # Update book status in the database
                     if update_book_status(suggested_book.get('id'), 'Reading'):
                         st.success(f"Updated '{suggested_book.get('title')}' to 'Reading' status!")
