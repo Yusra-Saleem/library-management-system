@@ -1,29 +1,27 @@
 import streamlit as st
-import random
-from datetime import datetime
-import sys
-import os
-
-# Add the parent directory to the path so we can import helpers
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from helpers.ai_recommendations import get_book_recommendations
 from helpers.book_api import search_books
+from helpers.book_data import save_books, load_books
 
 def show_recommendations_page():
-    """Display the recommendations page"""
+    """Display the recommendations page with proper error handling"""
     st.title("Book Recommendations")
+    
+    if 'books' not in st.session_state:
+        st.session_state.books = load_books()
     
     books = st.session_state.books
     
     if not books:
-        st.info("Add some books to your library to get recommendations.")
+        st.info("📚 Add some books to your library to get personalized recommendations!")
         return
     
     # Recommendation type selection
     rec_type = st.radio(
         "Recommendation Type",
         ["Similar to my library", "Based on my favorite genres", "Surprise me!"],
-        horizontal=True
+        horizontal=True,
+        key="rec_type"
     )
     
     # Convert selection to recommendation type parameter
@@ -33,127 +31,181 @@ def show_recommendations_page():
     elif rec_type == "Surprise me!":
         rec_type_param = "surprise"
     
-    # Get recommendations button
-    if st.button("Get Recommendations", use_container_width=True):
-        with st.spinner("Generating recommendations..."):
-            recommendations = get_book_recommendations(books, rec_type_param)
-        
-        if recommendations:
-            st.subheader("Recommended Books")
-            
-            # Display recommendations in cards
-            for i, book in enumerate(recommendations):
-                with st.container(border=True):
-                    st.subheader(book.get('title', 'Unknown Title'))
-                    st.write(f"**Author:** {book.get('author', 'Unknown Author')}")
-                    
-                    if 'genre' in book:
-                        st.write(f"**Genre:** {book.get('genre', 'Unknown')}")
-                    
-                    if 'reason' in book:
-                        with st.expander("Why we recommend this"):
-                            st.write(book.get('reason', ''))
-                    
-                    # Add button to find on Open Library
-                    if st.button(f"Find on Open Library", key=f"find_{i}"):
-                        # Set search as the book title and author
-                        search_query = f"{book.get('title', '')} {book.get('author', '')}"
-                        st.session_state.rec_search_query = search_query
-                        st.session_state.show_rec_search = True
-                        st.rerun()
-        else:
-            st.error("Failed to generate recommendations. Please try again.")
+    # Get recommendations section
+    if st.button("Get Recommendations", key="get_recs", use_container_width=True):
+        handle_recommendations(books, rec_type_param)
     
     # Show Open Library search results if requested
     if "show_rec_search" in st.session_state and st.session_state.show_rec_search:
-        st.divider()
-        st.subheader("Open Library Search Results")
-        
-        query = st.session_state.rec_search_query
-        with st.spinner("Searching..."):
-            search_results = search_books(query)
-        
-        if search_results:
-            # Display first 3 search results
-            for i, book in enumerate(search_results[:3]):
-                with st.container(border=True):
-                    col1, col2 = st.columns([3, 1])
-                    
-                    with col1:
-                        st.subheader(book.get('title', 'Unknown Title'))
-                        st.write(f"**Author:** {book.get('author', 'Unknown Author')}")
-                        st.write(f"**Year:** {book.get('year', 'Unknown')}")
-                        st.write(f"**Genre:** {book.get('genre', 'Unknown')}")
-                        
-                        if 'description' in book and book['description']:
-                            with st.expander("Description"):
-                                st.write(book['description'][:300] + "..." if len(book['description']) > 300 else book['description'])
-                    
-                    with col2:
-                        if 'cover_image' in book and book['cover_image']:
-                            st.image(book['cover_image'], width=100)
-        else:
-            st.warning("No books found. Try another recommendation.")
-        
-        if st.button("Clear Search Results"):
-            st.session_state.show_rec_search = False
-            st.rerun()
+        handle_search_results()
     
-    # Display reading suggestions based on library stats
+    # Reading suggestions section
+    display_reading_suggestions(books)
+
+def handle_recommendations(books, rec_type_param):
+    """Handle recommendation generation and display"""
+    with st.spinner("🔍 Analyzing your library and generating recommendations..."):
+        try:
+            recommendations = get_book_recommendations(books, rec_type_param)
+            if recommendations:
+                display_recommendations(recommendations)
+            else:
+                st.error("Failed to generate recommendations. Please try again.")
+        except Exception as e:
+            st.error(f"Error generating recommendations: {str(e)}")
+
+def display_recommendations(recommendations):
+    """Display recommendations in a grid layout"""
+    st.subheader("Recommended Books")
+    cols = st.columns(3)
+    
+    for i, book in enumerate(recommendations[:6]):
+        with cols[i % 3]:
+            with st.container(border=True):
+                st.markdown(f"**{book.get('title', 'Unknown Title')}**")
+                st.caption(f"by {book.get('author', 'Unknown Author')}")
+                
+                if book.get('cover_image'):
+                    st.image(book['cover_image'], use_column_width=True)
+                
+                if book.get('genre'):
+                    st.write(f"*{book.get('genre')}*")
+                
+                if book.get('reason'):
+                    with st.expander("Why we recommend this"):
+                        st.write(book['reason'])
+                
+                if st.button("Find Details", key=f"find_{i}"):
+                    handle_book_search(book)
+
+def handle_book_search(book):
+    """Handle Open Library search for recommended books"""
+    search_query = f"{book.get('title', '')} {book.get('author', '')}"
+    st.session_state.rec_search_query = search_query.strip()
+    st.session_state.show_rec_search = True
+    st.rerun()
+
+def handle_search_results():
+    """Display and handle search results"""
     st.divider()
-    st.subheader("Reading Suggestions")
+    st.subheader("Open Library Search Results")
     
-    # Analyze library for patterns
-    read_books = [book for book in books if book.get('status') == 'Read']
-    to_read_books = [book for book in books if book.get('status') == 'To Read']
+    if "rec_search_query" in st.session_state:
+        with st.spinner("Searching Open Library..."):
+            try:
+                results = search_books(st.session_state.rec_search_query)
+                display_search_results(results)
+            except Exception as e:
+                st.error(f"Search failed: {str(e)}")
+    
+    if st.button("Clear Search Results", key="clear_search"):
+        st.session_state.show_rec_search = False
+        st.rerun()
+
+def display_search_results(results):
+    """Display search results in a formatted way"""
+    if results:
+        for i, book in enumerate(results[:3]):
+            with st.container(border=True):
+                cols = st.columns([3, 1])
+                with cols[0]:
+                    st.markdown(f"**{book.get('title', 'Unknown Title')}**")
+                    st.write(f"by {book.get('author', 'Unknown Author')}")
+                    st.write(f"Published: {book.get('year', 'Unknown')}")
+                    st.write(f"Genre: {book.get('genre', 'Unknown')}")
+                    
+                    if book.get('description'):
+                        with st.expander("Description"):
+                            st.write(book['description'][:300] + "..." 
+                                   if len(book['description']) > 300 
+                                   else book['description'])
+                
+                with cols[1]:
+                    if book.get('cover_image'):
+                        st.image(book['cover_image'], width=100)
+    else:
+        st.warning("No results found. Try a different search term.")
+
+def display_reading_suggestions(books):
+    """Display personalized reading suggestions"""
+    st.divider()
+    st.subheader("Personalized Reading Suggestions")
     
     col1, col2 = st.columns(2)
     
     with col1:
-        st.write("**Genres to Explore**")
-        
-        # Find genres with few books
-        genre_counts = {}
-        for book in books:
-            genre = book.get('genre', 'Unknown')
-            if genre and genre != 'Unknown':
-                # Split genres if they contain commas
-                for g in genre.split(', '):
-                    genre_counts[g] = genre_counts.get(g, 0) + 1
-        
-        # Sort by count
-        sorted_genres = sorted(genre_counts.items(), key=lambda x: x[1])
-        
-        # Suggest underrepresented genres (less than 2 books)
-        underrepresented = [genre for genre, count in sorted_genres if count < 2]
-        
-        if underrepresented:
-            for genre in underrepresented[:5]:
-                st.write(f"- {genre}")
-        else:
-            st.write("Your library has a good variety of genres!")
+        st.write("**Explore New Genres**")
+        display_genre_suggestions(books)
     
     with col2:
-        st.write("**Next Book to Read**")
+        st.write("**Continue Reading**")
+        display_reading_progress(books)
+
+def display_genre_suggestions(books):
+    """Display genre-based suggestions"""
+    genre_counts = {}
+    for book in books:
+        if book.get('genre'):
+            for genre in book['genre'].split(', '):
+                genre_counts[genre] = genre_counts.get(genre, 0) + 1
+    
+    if genre_counts:
+        sorted_genres = sorted(genre_counts.items(), key=lambda x: x[1])
+        rare_genres = [g[0] for g in sorted_genres[:3] if g[1] < 3]
         
-        # Suggest a book from the to-read pile
-        if to_read_books:
-            # Sort by date added (newest first)
-            to_read_books_with_date = [book for book in to_read_books if 'date_added' in book]
-            if to_read_books_with_date:
-                to_read_books_with_date.sort(key=lambda x: x['date_added'], reverse=True)
-                suggested_book = to_read_books_with_date[0]
-                
-                st.write(f"- **{suggested_book.get('title', 'Unknown')}** by {suggested_book.get('author', 'Unknown')}")
-                if st.button("Start Reading"):
-                    # Set book status to "Reading"
-                    if "id" in suggested_book:
-                        for i, book in enumerate(st.session_state.books):
-                            if book.get('id') == suggested_book.get('id'):
-                                st.session_state.books[i]['status'] = 'Reading'
-                                from helpers.book_data import save_books
-                                save_books(st.session_state.books)
-                                st.success(f"Updated '{suggested_book.get('title')}' to 'Reading' status!")
-                                st.rerun()
+        if rare_genres:
+            st.write("Try these less common genres in your library:")
+            for genre in rare_genres:
+                st.write(f"- {genre}")
         else:
-            st.write("Add books to your 'To Read' list first!")
+            st.write("🌟 Your library has great genre diversity!")
+    else:
+        st.write("Add more books with genre information to get suggestions")
+
+def display_reading_progress(books):
+    """Display reading progress suggestions"""
+    current_reading = [b for b in books if b.get('status') == 'Reading']
+    to_read = [b for b in books if b.get('status') == 'To Read']
+    
+    if current_reading:
+        book = current_reading[0]
+        st.write(f"Continue reading:")
+        st.markdown(f"📖 **{book.get('title')}** by {book.get('author')}")
+        if st.button("Update Progress", key="update_progress"):
+            handle_progress_update(book)
+    elif to_read:
+        book = to_read[0]
+        st.write(f"Start reading:")
+        st.markdown(f"📚 **{book.get('title')}** by {book.get('author')}")
+        if st.button("Start Reading", key="start_reading"):
+            handle_start_reading(book)
+    else:
+        st.write("Add books to your 'To Read' list to get started")
+
+def handle_progress_update(book):
+    """Handle reading progress updates"""
+    new_progress = st.slider("Update Progress (%)", 0, 100, book.get('progress', 0),
+                           key="progress_slider")
+    if st.button("Save Progress", key="save_progress"):
+        update_book_progress(book, new_progress)
+
+def handle_start_reading(book):
+    """Handle starting to read a book"""
+    book['status'] = 'Reading'
+    book['progress'] = 0
+    if save_books([book]):
+        st.success(f"Started reading {book.get('title')}!")
+        st.session_state.books = load_books()
+        st.rerun()
+    else:
+        st.error("Failed to update reading status")
+
+def update_book_progress(book, progress):
+    """Update reading progress in database"""
+    book['progress'] = progress
+    if save_books([book]):
+        st.success(f"Updated progress for {book.get('title')}!")
+        st.session_state.books = load_books()
+        st.rerun()
+    else:
+        st.error("Failed to update progress")
